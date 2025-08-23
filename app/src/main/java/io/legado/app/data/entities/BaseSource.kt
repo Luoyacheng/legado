@@ -6,6 +6,7 @@ import com.script.buildScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import io.legado.app.constant.AppConst
 import io.legado.app.constant.AppLog
+import io.legado.app.data.entities.rule.RowUi
 import io.legado.app.help.CacheManager
 import io.legado.app.help.JsExtensions
 import io.legado.app.help.config.AppConfig
@@ -19,7 +20,9 @@ import io.legado.app.utils.has
 import org.intellij.lang.annotations.Language
 import io.legado.app.help.source.clearExploreKindsCache
 import io.legado.app.model.SharedJsScope.remove
+import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.isMainThread
+import io.legado.app.utils.printOnDebug
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -63,6 +66,12 @@ interface BaseSource : JsExtensions {
 
     override fun getSource(): BaseSource? {
         return this
+    }
+
+    fun loginUi(): List<RowUi>? {
+        return GSON.fromJsonArray<RowUi>(loginUi).onFailure {
+            it.printOnDebug()
+        }.getOrNull()
     }
 
     fun getLoginJs(): String? {
