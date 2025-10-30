@@ -116,7 +116,6 @@ fun BookSource.getBookType(): Int {
         BookSourceType.file -> BookType.text or BookType.webFile
         BookSourceType.image -> BookType.image
         BookSourceType.audio -> BookType.audio
-        BookSourceType.video -> BookType.video
         else -> BookType.text
     }
 }

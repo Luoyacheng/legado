@@ -16,7 +16,6 @@ import io.legado.app.help.http.decompressed
 import io.legado.app.help.http.newCallResponseBody
 import io.legado.app.help.http.okHttpClient
 import io.legado.app.help.source.SourceHelp
-import io.legado.app.model.RuleUpdate
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.fromJsonObject
@@ -147,11 +146,6 @@ class ImportRssSourceViewModel(app: Application) : BaseViewModel(app) {
     }
 
     private suspend fun importSourceUrl(url: String) {
-        RuleUpdate.cacheRssSourceMap[url]?.also {
-            allSources.addAll(it)
-            RuleUpdate.cacheRssSourceMap.remove(url)
-            return
-        }
         okHttpClient.newCallResponseBody {
             if (url.endsWith("#requestWithoutUA")) {
                 url(url.substringBeforeLast("#requestWithoutUA"))
@@ -178,7 +172,7 @@ class ImportRssSourceViewModel(app: Application) : BaseViewModel(app) {
             allSources.forEach {
                 val has = appDb.rssSourceDao.getByKey(it.sourceUrl)
                 checkSources.add(has)
-                selectStatus.add(has == null || has.lastUpdateTime < it.lastUpdateTime)
+                selectStatus.add(has == null)
             }
             successLiveData.postValue(allSources.size)
         }

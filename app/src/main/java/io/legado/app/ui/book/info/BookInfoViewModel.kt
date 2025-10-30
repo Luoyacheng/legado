@@ -3,7 +3,6 @@ package io.legado.app.ui.book.info
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import android.view.MenuItem
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import io.legado.app.R
@@ -37,7 +36,6 @@ import io.legado.app.model.ReadManga
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.localBook.LocalBook
 import io.legado.app.model.webBook.WebBook
-import io.legado.app.ui.book.source.SourceCallBack
 import io.legado.app.utils.ArchiveUtils
 import io.legado.app.utils.UrlUtil
 import io.legado.app.utils.isContentScheme
@@ -49,7 +47,6 @@ import kotlinx.coroutines.Dispatchers.IO
 class BookInfoViewModel(application: Application) : BaseViewModel(application) {
     val bookData = MutableLiveData<Book>()
     val chapterListData = MutableLiveData<List<BookChapter>>()
-    val customBtnListData = MutableLiveData<Boolean>()
     val webFiles = mutableListOf<WebFile>()
     var inBookshelf = false
     var bookSource: BookSource? = null
@@ -107,10 +104,9 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                 if (chapterList.isNotEmpty()) {
                     chapterListData.postValue(chapterList)
                 } else {
-                    loadChapter(book, isFromBookInfo = true)
+                    loadChapter(book)
                 }
             }
-            customBtnListData.postValue(bookSource?.customButton == true)
         }
     }
 
@@ -202,7 +198,7 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                     if (it.isWebFile) {
                         loadWebFile(it)
                     } else {
-                        loadChapter(it, runPreUpdateJs, isFromBookInfo = true)
+                        loadChapter(it, runPreUpdateJs)
                     }
                 }.onError {
                     AppLog.put("获取书籍信息失败\n${it.localizedMessage}", it)
@@ -214,8 +210,7 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
     private fun loadChapter(
         book: Book,
         runPreUpdateJs: Boolean = true,
-        scope: CoroutineScope = viewModelScope,
-        isFromBookInfo: Boolean = false
+        scope: CoroutineScope = viewModelScope
     ) {
         if (book.isLocal) {
             execute(scope) {
@@ -237,10 +232,9 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                 return
             }
             val oldBook = book.copy()
-            WebBook.getChapterList(scope, bookSource, book, runPreUpdateJs, isFromBookInfo = isFromBookInfo)
+            WebBook.getChapterList(scope, bookSource, book, runPreUpdateJs)
                 .onSuccess(IO) {
                     if (inBookshelf) {
-                        book.removeType(BookType.updateError)
                         appDb.bookDao.replace(oldBook, book)
                         /**
                          * runPreUpdateJs 有可能会修改 book 的 bookUrl
@@ -442,7 +436,6 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                     AudioPlay.book = book
                 }
                 book.save()
-                SourceCallBack.callBackBook(SourceCallBack.ADD_BOOK_SHELF, bookSource, book)
             }
             chapterListData.value?.let {
                 appDb.bookChapterDao.insert(*it.toTypedArray())
@@ -469,7 +462,6 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                 if (it.isLocal) {
                     LocalBook.deleteBook(it, deleteOriginal)
                 }
-                SourceCallBack.callBackBook(SourceCallBack.DEL_BOOK_SHELF, bookSource, it)
             }
         }.onSuccess {
             success?.invoke()
@@ -485,7 +477,6 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
             if (ReadManga.book?.bookUrl == bookData.value!!.bookUrl) {
                 ReadManga.clearMangaChapter()
             }
-            SourceCallBack.callBackBook(SourceCallBack.CLEAR_CACHE, bookSource, bookData.value!!)
         }.onSuccess {
             context.toastOnUi(R.string.clear_cache_success)
         }.onError {

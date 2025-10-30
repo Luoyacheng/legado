@@ -1,9 +1,7 @@
 package io.legado.app.ui.widget.keyboard
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Rect
-import android.os.Build
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -92,7 +90,6 @@ class KeyboardToolPop(
         }
     }
 
-    @SuppressLint("SetTextI18n")
     private fun initRecyclerView() {
         binding.recyclerView.adapter = adapter
         adapter.addHeaderView {
@@ -100,25 +97,6 @@ class KeyboardToolPop(
                 textView.text = helpChar
                 root.setOnClickListener {
                     helpAlert()
-                }
-            }
-        }
-        // 安卓6以上支持撤销重做
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            adapter.addHeaderView {
-                ItemFilletTextBinding.inflate(context.layoutInflater, it, false).apply {
-                    textView.text = "↩\uFE0F"
-                    root.setOnClickListener {
-                        callBack.onUndoClicked()
-                    }
-                }
-            }
-            adapter.addHeaderView {
-                ItemFilletTextBinding.inflate(context.layoutInflater, it, false).apply {
-                    textView.text = "↪\uFE0F"
-                    root.setOnClickListener {
-                        callBack.onRedoClicked()
-                    }
                 }
             }
         }
@@ -189,8 +167,6 @@ class KeyboardToolPop(
 
         fun sendText(text: String)
 
-        fun onUndoClicked()
-        fun onRedoClicked()
     }
 
 }

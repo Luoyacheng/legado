@@ -201,19 +201,18 @@ object WebBook {
         bookSource: BookSource,
         book: Book,
         runPerJs: Boolean = false,
-        context: CoroutineContext = Dispatchers.IO,
-        isFromBookInfo : Boolean = false
+        context: CoroutineContext = Dispatchers.IO
     ): Coroutine<List<BookChapter>> {
         return Coroutine.async(scope, context) {
-            getChapterListAwait(bookSource, book, runPerJs,isFromBookInfo).getOrThrow()
+            getChapterListAwait(bookSource, book, runPerJs).getOrThrow()
         }
     }
 
-    suspend fun runPreUpdateJs(bookSource: BookSource, book: Book, isFromBookInfo : Boolean = false): Result<Unit> {
+    suspend fun runPreUpdateJs(bookSource: BookSource, book: Book): Result<Unit> {
         return kotlin.runCatching {
             val preUpdateJs = bookSource.ruleToc?.preUpdateJs
             if (!preUpdateJs.isNullOrBlank()) {
-                AnalyzeRule(book, bookSource, true, isFromBookInfo)
+                AnalyzeRule(book, bookSource, true)
                     .setCoroutineContext(coroutineContext)
                     .evalJS(preUpdateJs)
             }
@@ -226,14 +225,13 @@ object WebBook {
     suspend fun getChapterListAwait(
         bookSource: BookSource,
         book: Book,
-        runPerJs: Boolean = false,
-        isFromBookInfo : Boolean = false
+        runPerJs: Boolean = false
     ): Result<List<BookChapter>> {
         book.removeAllBookType()
         book.addType(bookSource.getBookType())
         return kotlin.runCatching {
             if (runPerJs) {
-                runPreUpdateJs(bookSource, book, isFromBookInfo).getOrThrow()
+                runPreUpdateJs(bookSource, book).getOrThrow()
             }
             if (book.bookUrl == book.tocUrl && !book.tocHtml.isNullOrEmpty()) {
                 BookChapterList.analyzeChapterList(
@@ -241,8 +239,7 @@ object WebBook {
                     book = book,
                     baseUrl = book.tocUrl,
                     redirectUrl = book.tocUrl,
-                    body = book.tocHtml,
-                    isFromBookInfo = isFromBookInfo
+                    body = book.tocHtml
                 )
             } else {
                 val analyzeUrl = AnalyzeUrl(
@@ -265,8 +262,7 @@ object WebBook {
                     book = book,
                     baseUrl = book.tocUrl,
                     redirectUrl = res.url,
-                    body = res.body,
-                    isFromBookInfo = isFromBookInfo
+                    body = res.body
                 )
             }
         }.onFailure {

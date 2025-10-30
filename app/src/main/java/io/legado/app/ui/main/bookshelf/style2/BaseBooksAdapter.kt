@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
-import io.legado.app.help.config.AppConfig
 
 abstract class BaseBooksAdapter<VH : RecyclerView.ViewHolder>(
     val context: Context,

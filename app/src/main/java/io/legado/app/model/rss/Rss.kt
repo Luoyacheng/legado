@@ -24,11 +24,10 @@ object Rss {
         sortUrl: String,
         rssSource: RssSource,
         page: Int,
-        key: String? = null,
         context: CoroutineContext = Dispatchers.IO
     ): Coroutine<Pair<MutableList<RssArticle>, String?>> {
         return Coroutine.async(scope, context) {
-            getArticlesAwait(sortName, sortUrl, rssSource, page, key)
+            getArticlesAwait(sortName, sortUrl, rssSource, page)
         }
     }
 
@@ -37,13 +36,11 @@ object Rss {
         sortUrl: String,
         rssSource: RssSource,
         page: Int,
-        key: String? = null
     ): Pair<MutableList<RssArticle>, String?> {
         val ruleData = RuleData()
         val analyzeUrl = AnalyzeUrl(
             sortUrl,
             page = page,
-            key = key,
             source = rssSource,
             ruleData = ruleData,
             coroutineContext = coroutineContext,

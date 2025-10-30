@@ -63,7 +63,6 @@ object AudioPlay : CoroutineScope by MainScope() {
     var durChapterPos = 0
     var durChapter: BookChapter? = null
     var durPlayUrl = ""
-    var durLyric: String? = null
     var durAudioSize = 0
     var inBookshelf = false
     var bookSource: BookSource? = null
@@ -87,7 +86,6 @@ object AudioPlay : CoroutineScope by MainScope() {
             durChapterIndex = book.durChapterIndex
             durChapterPos = book.durChapterPos
             durPlayUrl = ""
-            durLyric = null
             durAudioSize = 0
         }
         upDurChapter()
@@ -106,7 +104,6 @@ object AudioPlay : CoroutineScope by MainScope() {
         durChapterIndex = book.durChapterIndex
         durChapterPos = book.durChapterPos
         durPlayUrl = ""
-        durLyric = null
         durAudioSize = 0
         upDurChapter()
         postEvent(EventBus.AUDIO_BUFFER_PROGRESS, 0)
@@ -163,7 +160,6 @@ object AudioPlay : CoroutineScope by MainScope() {
                     }.onCancel {
                         removeLoading(index)
                     }.onFinally {
-                        callback?.upLyric(book.bookUrl, durLyric)
                         removeLoading(index)
                     }
             } else {
@@ -179,7 +175,6 @@ object AudioPlay : CoroutineScope by MainScope() {
     private fun contentLoadFinish(chapter: BookChapter, content: String) {
         if (chapter.index == book?.durChapterIndex) {
             durPlayUrl = content
-            durLyric = chapter.getVariable("lyric")
             upPlayUrl()
         }
     }
@@ -246,17 +241,14 @@ object AudioPlay : CoroutineScope by MainScope() {
         }
     }
 
-    fun setSpeed(speed: Float) {
+    fun adjustSpeed(adjust: Float) {
         if (AudioPlayService.isRun) {
-            val clampedSpeed = speed.coerceIn(0.5f, 2.0f)
             context.startService<AudioPlayService> {
-                action = IntentAction.setSpeed
-                putExtra("speed", clampedSpeed)
+                action = IntentAction.adjustSpeed
+                putExtra("adjust", adjust)
             }
         }
     }
-
-     
 
     fun adjustProgress(position: Int) {
         durChapterPos = position
@@ -275,7 +267,6 @@ object AudioPlay : CoroutineScope by MainScope() {
             durChapterIndex = index
             durChapterPos = 0
             durPlayUrl = ""
-            durLyric = null
             saveRead()
             loadPlayUrl()
         }
@@ -288,7 +279,6 @@ object AudioPlay : CoroutineScope by MainScope() {
                 durChapterIndex -= 1
                 durChapterPos = 0
                 durPlayUrl = ""
-                durLyric = null
                 saveRead()
                 loadPlayUrl()
             }
@@ -303,7 +293,6 @@ object AudioPlay : CoroutineScope by MainScope() {
                     durChapterIndex += 1
                     durChapterPos = 0
                     durPlayUrl = ""
-                    durLyric = null
                     saveRead()
                     loadPlayUrl()
                 }
@@ -312,7 +301,6 @@ object AudioPlay : CoroutineScope by MainScope() {
             PlayMode.SINGLE_LOOP -> {
                 durChapterPos = 0
                 durPlayUrl = ""
-                durLyric = null
                 saveRead()
                 loadPlayUrl()
             }
@@ -321,7 +309,6 @@ object AudioPlay : CoroutineScope by MainScope() {
                 durChapterIndex = (0 until simulatedChapterSize).random()
                 durChapterPos = 0
                 durPlayUrl = ""
-                durLyric = null
                 saveRead()
                 loadPlayUrl()
             }
@@ -330,7 +317,6 @@ object AudioPlay : CoroutineScope by MainScope() {
                 durChapterIndex = (durChapterIndex + 1) % simulatedChapterSize
                 durChapterPos = 0
                 durPlayUrl = ""
-                durLyric = null
                 saveRead()
                 loadPlayUrl()
             }
@@ -363,7 +349,7 @@ object AudioPlay : CoroutineScope by MainScope() {
         }
     }
 
-    fun saveRead(first: Boolean = false) {
+    fun saveRead() {
         val book = book ?: return
         Coroutine.async {
             book.lastCheckCount = 0
@@ -371,7 +357,7 @@ object AudioPlay : CoroutineScope by MainScope() {
             val chapterChanged = book.durChapterIndex != durChapterIndex
             book.durChapterIndex = durChapterIndex
             book.durChapterPos = durChapterPos
-            if (first || chapterChanged) {
+            if (chapterChanged) {
                 appDb.bookChapterDao.getChapter(book.bookUrl, book.durChapterIndex)?.let {
                     book.durChapterTitle = it.getDisplayTitle(
                         ContentProcessor.get(book.name, book.origin).getTitleReplaceRules(),
@@ -433,8 +419,7 @@ object AudioPlay : CoroutineScope by MainScope() {
     interface CallBack {
 
         fun upLoading(loading: Boolean)
-        fun upLyric(bookUrl: String,lyric: String?)
-        fun upLyricP(position: Int)
+
     }
 
 }

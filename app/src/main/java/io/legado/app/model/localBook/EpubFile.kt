@@ -5,11 +5,9 @@ import android.graphics.BitmapFactory
 import android.os.ParcelFileDescriptor
 import android.text.TextUtils
 import io.legado.app.constant.AppLog
-import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.help.book.BookHelp
-import io.legado.app.help.config.AppConfig
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.HtmlFormatter
 import io.legado.app.utils.encodeURI
@@ -354,7 +352,6 @@ class EpubFile(var book: Book) {
                 }
             }
         }
-        getWordCount(chapterList, book)
         return chapterList
     }
 
@@ -436,22 +433,6 @@ class EpubFile(var book: Book) {
 
     protected fun finalize() {
         fileDescriptor?.close()
-    }
-
-    private fun getWordCount(list: ArrayList<BookChapter>, book: Book) {
-        if (!AppConfig.tocCountWords) {
-            return
-        }
-        val chapterList = appDb.bookChapterDao.getChapterList(book.bookUrl)
-        if (chapterList.isNotEmpty()) {
-            val map = chapterList.associateBy({ it.getFileName() }, { it.wordCount })
-            for (bookChapter in list) {
-                val wordCount = map[bookChapter.getFileName()]
-                if (wordCount != null) {
-                    bookChapter.wordCount = wordCount
-                }
-            }
-        }
     }
 
 }

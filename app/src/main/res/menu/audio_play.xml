@@ -31,10 +31,6 @@
         android:checkable="true"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/menu_skip_credits"
-        android:title="@string/skip_book_credits"
-        app:showAsAction="never" />
 
     <item
         android:id="@+id/menu_log"

@@ -92,7 +92,6 @@ class BookSourceEditAdapter : RecyclerView.Adapter<BookSourceEditAdapter.MyViewH
             }
             editText.addTextChangedListener(textWatcher)
             editText.setTag(R.id.tag2, textWatcher)
-            editText.clearFocus()
         }
     }
 

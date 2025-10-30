@@ -110,7 +110,6 @@ class RssSourceEditAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             }
             editText.addTextChangedListener(textWatcher)
             editText.setTag(R.id.tag2, textWatcher)
-            editText.clearFocus()
         }
     }
 

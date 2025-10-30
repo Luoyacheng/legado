@@ -19,7 +19,7 @@
         android:id="@+id/vw_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#90000000" />
+        android:background="#50000000" />
 
     <io.legado.app.ui.widget.TitleBar
         android:id="@+id/title_bar"
@@ -64,23 +64,24 @@
         android:scaleType="centerCrop"
         app:civ_border_color="@color/accent"
         app:civ_border_width="2dp"
-        app:layout_constraintBottom_toTopOf="@+id/lyricViewX"
+        app:layout_constraintBottom_toTopOf="@+id/ll_player_progress"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/title_bar"
-        tools:src="@drawable/image_rss_article" />
+        app:layout_constraintTop_toBottomOf="@+id/title_bar" />
 
-    <com.dirror.lyricviewx.LyricViewX
-        android:id="@+id/lyricViewX"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/tv_sub_title"
-        app:layout_constraintTop_toBottomOf="@+id/iv_cover"
-        app:lrcCurrentTextColor="@color/md_white_1000"
-        app:lrcPadding="16dp"
-        tools:visibility="visible"
-        tools:lrcLabel="歌词文本区" />
+    <io.legado.app.ui.widget.image.ImageButton
+            android:id="@+id/iv_play_mode"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:background="@drawable/selector_circle_btn_bg"
+            android:contentDescription="@string/play_mode"
+            android:padding="5dp"
+            android:src="@drawable/ic_play_mode_list_end_stop"
+            android:layout_marginStart="16dp"
+            app:tint="@color/md_white_1000"
+            app:layout_constraintBottom_toTopOf="@+id/tv_sub_title"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:ignore="ImageContrastCheck" />
 
     <TextView
         android:id="@+id/tv_sub_title"
@@ -156,13 +157,13 @@
             android:layout_weight="1" />
 
         <io.legado.app.ui.widget.image.ImageButton
-            android:id="@+id/iv_speed_control"
+            android:id="@+id/iv_fast_rewind"
             android:layout_width="46dp"
             android:layout_height="46dp"
             android:background="@drawable/selector_circle_btn_bg"
-            android:contentDescription="@string/speed_control"
+            android:contentDescription="@string/skip_previous"
             android:padding="5dp"
-            android:src="@drawable/ic_speed_control"
+            android:src="@drawable/ic_fast_rewind"
             app:tint="@color/md_white_1000"
             tools:ignore="ImageContrastCheck" />
 
@@ -235,13 +236,13 @@
             android:layout_weight="1" />
 
         <io.legado.app.ui.widget.image.ImageButton
-            android:id="@+id/iv_play_mode"
+            android:id="@+id/iv_fast_forward"
             android:layout_width="46dp"
             android:layout_height="46dp"
             android:background="@drawable/selector_circle_btn_bg"
-            android:contentDescription="@string/play_mode"
+            android:contentDescription="@string/skip_next"
             android:padding="5dp"
-            android:src="@drawable/ic_play_mode_list_end_stop"
+            android:src="@drawable/ic_fast_forward"
             app:tint="@color/md_white_1000"
             tools:ignore="ImageContrastCheck" />
 

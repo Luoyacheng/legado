@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.flow
 import org.apache.commons.text.StringEscapeUtils
 import splitties.init.appCtx
 import kotlin.coroutines.coroutineContext
-import io.legado.app.help.book.isAudio
 
 /**
  * 获取正文
@@ -64,6 +63,19 @@ object BookContent {
         analyzeRule.setChapter(bookChapter)
         analyzeRule.setNextChapterUrl(mNextChapterUrl)
         coroutineContext.ensureActive()
+        val titleRule = contentRule.title
+        if (!titleRule.isNullOrBlank()) {
+            val title = analyzeRule.runCatching {
+                getString(titleRule)
+            }.onFailure {
+                Debug.log(bookSource.bookSourceUrl, "获取标题出错, ${it.localizedMessage}")
+            }.getOrNull()
+            if (!title.isNullOrBlank()) {
+                bookChapter.title = title
+                bookChapter.titleMD5 = null
+                appDb.bookChapterDao.update(bookChapter)
+            }
+        }
         var contentData = analyzeContent(
             book, baseUrl, redirectUrl, body, contentRule, bookChapter, bookSource, mNextChapterUrl
         )
@@ -130,30 +142,6 @@ object BookContent {
             contentStr = analyzeRule.getString(replaceRegex, contentStr)
             contentStr = contentStr.split(AppPattern.LFRegex).joinToString("\n") { "　　$it" }
         }
-        val titleRule = contentRule.title //先正文再章节名称
-        if (!titleRule.isNullOrBlank()) {
-            var title = analyzeRule.runCatching {
-                getString(titleRule)
-            }.onFailure {
-                Debug.log(bookSource.bookSourceUrl, "获取标题出错, ${it.localizedMessage}")
-            }.getOrNull()
-            if (!title.isNullOrBlank()) {
-                val matchResult = AppPattern.imgRegex.find(title)
-                if (matchResult != null) {
-                    matchResult.groupValues[1]
-                    val (group1,group2) = matchResult.destructured
-                    title = if (group1 != "") {
-                        group1
-                    } else {
-                        bookChapter.title
-                    }
-                    bookChapter.imgUrl = group2
-                }
-                bookChapter.title = title
-                bookChapter.titleMD5 = null
-                appDb.bookChapterDao.update(bookChapter)
-            }
-        }
         Debug.log(bookSource.bookSourceUrl, "┌获取章节名称")
         Debug.log(bookSource.bookSourceUrl, "└${bookChapter.title}")
         Debug.log(bookSource.bookSourceUrl, "┌获取正文内容")
@@ -163,14 +151,6 @@ object BookContent {
         }
         if (needSave) {
             BookHelp.saveContent(bookSource, book, bookChapter, contentStr)
-        }
-        if (book.isAudio) {
-            val index = contentStr.indexOf("\n")
-            if (index != -1) {
-                contentStr.substring(index).trimIndent()
-                    .takeIf { it.isNotEmpty() }?.let { bookChapter.putLyric(it) }
-                contentStr = contentStr.substring(0, index)
-            }
         }
         return contentStr
     }

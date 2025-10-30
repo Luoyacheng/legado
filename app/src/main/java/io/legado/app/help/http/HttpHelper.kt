@@ -12,7 +12,6 @@ import okhttp3.ConnectionSpec
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.Credentials
-import okhttp3.Dns
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import java.net.InetSocketAddress
@@ -98,12 +97,6 @@ val okHttpClient: OkHttpClient by lazy {
             }
             networkResponse
         }
-    if (AppConfig.addressCache.isNotEmpty()) {
-        builder.dns { hostname ->
-            val cachedAddress = AppConfig.addressCache[hostname]
-            cachedAddress ?: Dns.SYSTEM.lookup(hostname)
-        }
-    }
     if (AppConfig.isCronet) {
         if (Cronet.loader?.install() == true) {
             Cronet.interceptor?.let {

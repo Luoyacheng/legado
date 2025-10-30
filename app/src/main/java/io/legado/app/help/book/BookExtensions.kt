@@ -38,9 +38,6 @@ import kotlin.math.min
 val Book.isAudio: Boolean
     get() = isType(BookType.audio)
 
-val Book.isVideo: Boolean
-    get() = isType(BookType.video)
-
 val Book.isImage: Boolean
     get() = isType(BookType.image)
 
@@ -224,7 +221,7 @@ fun Book.clearType() {
 fun Book.isType(@BookType.Type bookType: Int): Boolean = type and bookType > 0
 
 fun Book.upType() {
-    if (type < 4) {
+    if (type < 8) {
         type = when (type) {
             BookSourceType.image -> BookType.image
             BookSourceType.audio -> BookType.audio

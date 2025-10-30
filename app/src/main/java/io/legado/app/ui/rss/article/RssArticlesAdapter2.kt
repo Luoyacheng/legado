@@ -34,30 +34,8 @@ class RssArticlesAdapter2(context: Context, callBack: CallBack) :
         item: RssArticle,
         payloads: MutableList<Any>
     ) {
-        if (payloads.isNotEmpty()) {
-            payloads.forEach { payload ->
-                when (payload) {
-                    "read" -> {
-                        if (item.read) {
-                            binding.tvTitle.setTextColor(context.getCompatColor(R.color.tv_text_summary))
-                        } else {
-                            binding.tvTitle.setTextColor(context.getCompatColor(R.color.primaryText))
-                        }
-                    }
-                    "title" -> {
-                        binding.tvTitle.text = item.title
-                    }
-                }
-            }
-            return
-        }
         binding.run {
             tvTitle.text = item.title
-            if (item.read) {
-                tvTitle.setTextColor(context.getCompatColor(R.color.tv_text_summary))
-            } else {
-                tvTitle.setTextColor(context.getCompatColor(R.color.primaryText))
-            }
             tvPubDate.text = item.pubDate
             if (item.image.isNullOrBlank() && !callBack.isGridLayout) {
                 imageView.gone()
@@ -66,7 +44,7 @@ class RssArticlesAdapter2(context: Context, callBack: CallBack) :
                     RequestOptions().set(OkHttpModelLoader.sourceOriginOption, item.origin)
                 ImageLoader.load(context, item.image).apply(options).apply {
                     if (callBack.isGridLayout) {
-                        placeholder(R.drawable.transparent_placeholder)
+                        placeholder(R.drawable.image_rss_article)
                     } else {
                         addListener(object : RequestListener<Drawable> {
                             override fun onLoadFailed(
@@ -93,6 +71,11 @@ class RssArticlesAdapter2(context: Context, callBack: CallBack) :
                         })
                     }
                 }.into(imageView)
+            }
+            if (item.read) {
+                tvTitle.setTextColor(context.getCompatColor(R.color.tv_text_summary))
+            } else {
+                tvTitle.setTextColor(context.getCompatColor(R.color.primaryText))
             }
         }
     }

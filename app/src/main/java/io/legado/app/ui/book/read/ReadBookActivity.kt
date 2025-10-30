@@ -62,9 +62,6 @@ import io.legado.app.model.ReadBook
 import io.legado.app.model.analyzeRule.AnalyzeRule
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setChapter
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setCoroutineContext
-import io.legado.app.utils.GSON
-import io.legado.app.utils.fromJsonObject
-import io.legado.app.utils.isJsonObject
 import io.legado.app.model.localBook.EpubFile
 import io.legado.app.model.localBook.MobiFile
 import io.legado.app.receiver.NetworkChangedListener
@@ -85,14 +82,12 @@ import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_COLOR
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_DIVIDER_COLOR
 import io.legado.app.ui.book.read.page.ContentTextView
 import io.legado.app.ui.book.read.page.ReadView
-import io.legado.app.ui.book.read.page.delegate.ScrollPageDelegate
 import io.legado.app.ui.book.read.page.entities.PageDirection
 import io.legado.app.ui.book.read.page.entities.TextPage
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.ui.book.read.page.provider.LayoutProgressListener
 import io.legado.app.ui.book.searchContent.SearchContentActivity
 import io.legado.app.ui.book.searchContent.SearchResult
-import io.legado.app.ui.book.source.SourceCallBack
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.book.toc.TocActivityResult
 import io.legado.app.ui.book.toc.rule.TxtTocRuleDialog
@@ -670,9 +665,9 @@ class ReadBookActivity : BaseReadBookActivity(),
                 LogUtils.d("onGenericMotionEvent", "axisValue = $axisValue")
                 // 获得垂直坐标上的滚动方向
                 if (axisValue < 0.0f) { // 滚轮向下滚
-                    mouseWheelPage(PageDirection.NEXT, axisValue)
+                    mouseWheelPage(PageDirection.NEXT)
                 } else { // 滚轮向上滚
-                    mouseWheelPage(PageDirection.PREV, axisValue)
+                    mouseWheelPage(PageDirection.PREV)
                 }
                 return true
             }
@@ -918,16 +913,11 @@ class ReadBookActivity : BaseReadBookActivity(),
     /**
      * 鼠标滚轮翻页
      */
-    private fun mouseWheelPage(direction: PageDirection, distance: Float) {
+    private fun mouseWheelPage(direction: PageDirection) {
         if (menuLayoutIsVisible || !AppConfig.mouseWheelPage) {
             return
         }
-        if (binding.readView.isScroll) {
-            // 滚动视图时滚动,否则翻页
-            (binding.readView.pageDelegate as? ScrollPageDelegate)?.curPage?.scroll((distance * 50).toInt())
-        } else {
-            keyPageDebounce(direction, mouseWheel = true, longPress = false)
-        }
+        keyPageDebounce(direction, mouseWheel = true, longPress = false)
     }
 
     /**
@@ -1276,7 +1266,6 @@ class ReadBookActivity : BaseReadBookActivity(),
             startActivity<SourceLoginActivity> {
                 putExtra("type", "bookSource")
                 putExtra("key", it.bookSourceUrl)
-                putExtra("bookUrl", ReadBook.book?.bookUrl)
             }
         }
     }
@@ -1329,53 +1318,6 @@ class ReadBookActivity : BaseReadBookActivity(),
             noButton()
         }
     }
-
-    /**
-     * 点击图片
-     */
-    override fun clickImg(clickjs: String) {
-        val braceIndex = clickjs.indexOf(",{")
-        val braceIndex2 = if (braceIndex == -1) clickjs.indexOf(", {") else -1
-        if (braceIndex != -1 || braceIndex2 != -1) {
-            val book = ReadBook.book ?: return
-            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex)
-            if (chapter == null) {
-                toastOnUi("章节不存在")
-                return
-            }
-            val (result, urlOptionStr) = when {
-                braceIndex != -1 -> {
-                    clickjs.substring(0, braceIndex) to clickjs.substring(braceIndex + 1)
-                }
-                else -> {
-                    clickjs.substring(0, braceIndex2) to clickjs.substring(braceIndex2 + 2)
-                }
-            }
-            if (urlOptionStr.isJsonObject()) {
-                val urlOptionMap = GSON.fromJsonObject<Map<String, String>>(urlOptionStr).getOrThrow()
-                val jsStr = urlOptionMap["js"]
-                jsStr?.let {
-                    Coroutine.async(lifecycleScope) {
-                        val source = ReadBook.bookSource ?: throw Exception("书源不存在")
-                        AnalyzeRule(book, source).apply {
-                            setCoroutineContext(coroutineContext)
-                            setBaseUrl(chapter.url)
-                            setChapter(chapter)
-                            evalJS(jsStr, result).toString()
-                        }
-                    }.onError {
-                        AppLog.put("图片点击执行出错\n${it.localizedMessage}", it, true)
-                    }
-                }
-            }
-            else {
-                toastOnUi("链接格式错误")
-                return
-            }
-        }
-    }
-
-
 
     /**
      * 朗读按钮
@@ -1634,10 +1576,11 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     override fun finish() {
         val book = ReadBook.book ?: return super.finish()
-        SourceCallBack.callBackBook(SourceCallBack.END_READ, ReadBook.bookSource, ReadBook.book)
+
         if (ReadBook.inBookshelf) {
             return super.finish()
         }
+
         if (!AppConfig.showAddToShelfAlert) {
             viewModel.removeFromBookshelf { super.finish() }
         } else {
@@ -1646,7 +1589,6 @@ class ReadBookActivity : BaseReadBookActivity(),
                 okButton {
                     ReadBook.book?.removeType(BookType.notShelf)
                     ReadBook.book?.save()
-                    SourceCallBack.callBackBook(SourceCallBack.ADD_BOOK_SHELF, ReadBook.bookSource, ReadBook.book)
                     ReadBook.inBookshelf = true
                     setResult(RESULT_OK)
                 }

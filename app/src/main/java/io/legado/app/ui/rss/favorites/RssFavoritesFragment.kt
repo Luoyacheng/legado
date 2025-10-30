@@ -72,7 +72,6 @@ class RssFavoritesFragment() : VMBaseFragment<RssFavoritesViewModel>(R.layout.fr
             putExtra("title", rssStar.title)
             putExtra("origin", rssStar.origin)
             putExtra("link", rssStar.link)
-            putExtra("sort", rssStar.sort)
         }
     }
 

@@ -24,10 +24,8 @@ import io.legado.app.utils.printOnDebug
 import io.legado.app.utils.toastOnUi
 import org.apache.commons.text.StringEscapeUtils
 import java.util.Date
-import io.legado.app.data.entities.BaseSource
 
 class WebViewModel(application: Application) : BaseViewModel(application) {
-    var source: BaseSource? = null
     var intent: Intent? = null
     var baseUrl: String = ""
     var html: String? = null
@@ -37,11 +35,6 @@ class WebViewModel(application: Application) : BaseViewModel(application) {
     var sourceName: String = ""
     var sourceOrigin: String = ""
     var sourceType = SourceType.book
-    companion object {
-        // 应用期间保持状态
-        var sessionShowWebLog = false
-    }
-    var showWebLog = false
 
     fun initData(
         intent: Intent,
@@ -56,9 +49,7 @@ class WebViewModel(application: Application) : BaseViewModel(application) {
             sourceType = intent.getIntExtra("sourceType", SourceType.book)
             sourceVerificationEnable = intent.getBooleanExtra("sourceVerificationEnable", false)
             refetchAfterSuccess = intent.getBooleanExtra("refetchAfterSuccess", true)
-            html = intent.getStringExtra("html")
-            showWebLog = sessionShowWebLog
-            source = SourceHelp.getSource(sourceOrigin, sourceType)
+            val source = SourceHelp.getSource(sourceOrigin, sourceType)
             val analyzeUrl = AnalyzeUrl(url, source = source, coroutineContext = coroutineContext)
             baseUrl = analyzeUrl.url
             headerMap.putAll(analyzeUrl.headerMap)
@@ -92,12 +83,6 @@ class WebViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
-    fun toggleShowWebLog() {
-        val newValue = !showWebLog
-        showWebLog = newValue
-        sessionShowWebLog = newValue
-    }
-
     private suspend fun webData2bitmap(data: String): ByteArray? {
         return if (URLUtil.isValidUrl(data)) {
             okHttpClient.newCallResponseBody {
@@ -116,15 +101,13 @@ class WebViewModel(application: Application) : BaseViewModel(application) {
             execute {
                 val url = intent!!.getStringExtra("url")!!
                 val source = appDb.bookSourceDao.getBookSource(sourceOrigin)
-                if (html == null) {
-                    html = AnalyzeUrl(
-                        url,
-                        headerMapF = headerMap,
-                        source = source,
-                        coroutineContext = coroutineContext
-                    ).getStrResponseAwait(useWebView = false).body
-                }
-                SourceVerificationHelp.setResult(sourceOrigin, html ?: "", baseUrl)
+                html = AnalyzeUrl(
+                    url,
+                    headerMapF = headerMap,
+                    source = source,
+                    coroutineContext = coroutineContext
+                ).getStrResponseAwait(useWebView = false).body
+                SourceVerificationHelp.setResult(sourceOrigin, html ?: "")
             }.onSuccess {
                 success.invoke()
             }
@@ -132,8 +115,8 @@ class WebViewModel(application: Application) : BaseViewModel(application) {
             webView.evaluateJavascript("document.documentElement.outerHTML") {
                 execute {
                     html = StringEscapeUtils.unescapeJson(it).trim('"')
+                    SourceVerificationHelp.setResult(sourceOrigin, html ?: "")
                 }.onSuccess {
-                    SourceVerificationHelp.setResult(sourceOrigin, html ?: "",  webView.url?:"")
                     success.invoke()
                 }
             }

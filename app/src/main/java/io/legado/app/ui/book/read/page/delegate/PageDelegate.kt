@@ -30,7 +30,7 @@ abstract class PageDelegate(protected val readView: ReadView) {
     protected val touchY: Float get() = readView.touchY
 
     protected val nextPage: PageView get() = readView.nextPage
-    val curPage: PageView get() = readView.curPage
+    protected val curPage: PageView get() = readView.curPage
     protected val prevPage: PageView get() = readView.prevPage
 
     protected var viewWidth: Int = readView.width

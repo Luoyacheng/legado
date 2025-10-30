@@ -16,7 +16,6 @@ import io.legado.app.data.entities.rule.ExploreRule
 import io.legado.app.data.entities.rule.ReviewRule
 import io.legado.app.data.entities.rule.SearchRule
 import io.legado.app.data.entities.rule.TocRule
-import io.legado.app.model.AudioPlay
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.splitNotBlank
@@ -37,7 +36,7 @@ data class BookSource(
     var bookSourceName: String = "",
     // 分组
     var bookSourceGroup: String? = null,
-    // 类型，0 文本，1 音频, 2 图片, 3 文件（指的是类似知轩藏书只提供下载的网站）, 4 视频
+    // 类型，0 文本，1 音频, 2 图片, 3 文件（指的是类似知轩藏书只提供下载的网站）
     @BookSourceType.Type
     var bookSourceType: Int = 0,
     // 详情页url正则
@@ -95,11 +94,7 @@ data class BookSource(
     // 正文页规则
     var ruleContent: ContentRule? = null,
     // 段评规则
-    var ruleReview: ReviewRule? = null,
-    @ColumnInfo(defaultValue = "0")
-    var eventListener: Boolean = false, // 是否监听事件来执行回调规则
-    @ColumnInfo(defaultValue = "0")
-    var customButton: Boolean = false //由书源控制的自定义按钮
+    var ruleReview: ReviewRule? = null
 ) : Parcelable, BaseSource {
 
     override fun getTag(): String {

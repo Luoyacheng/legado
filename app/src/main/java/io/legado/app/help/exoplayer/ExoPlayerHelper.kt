@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MimeTypes
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.FileDataSource
 import androidx.media3.datasource.ResolvingDataSource
@@ -39,8 +38,7 @@ object ExoPlayerHelper {
 
     fun createMediaItem(url: String, headers: Map<String, String>): MediaItem {
         val formatUrl = url + SPLIT_TAG + GSON.toJson(headers, mapType)
-        val mediaItemBuilder = MediaItem.Builder().setUri(formatUrl)
-        return mediaItemBuilder.build()
+        return MediaItem.Builder().setUri(formatUrl).build()
     }
 
     fun createHttpExoPlayer(context: Context): ExoPlayer {
@@ -51,13 +49,13 @@ object ExoPlayerHelper {
                 DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS / 10,
                 DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS / 10
             ).build()
+
         ).setMediaSourceFactory(
             DefaultMediaSourceFactory(context)
                 .setDataSourceFactory(resolvingDataSource)
                 .setLiveTargetOffsetMs(5000)
         ).build()
     }
-
 
 
 
@@ -86,7 +84,7 @@ object ExoPlayerHelper {
     /**
      * 支持缓存的DataSource.Factory
      */
-    val cacheDataSourceFactory by lazy {
+    private val cacheDataSourceFactory by lazy {
         //使用自定义的CacheDataSource以支持设置UA
         return@lazy CacheDataSource.Factory()
             .setCache(cache)

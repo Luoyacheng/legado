@@ -24,13 +24,7 @@ data class RssStar(
     var image: String? = null,
     @ColumnInfo(defaultValue = "默认分组")
     var group: String = "默认分组",
-    override var variable: String? = null,
-    /**类型 0网页，1图片，2视频**/
-    @ColumnInfo(defaultValue = "0")
-    var type: Int = 0,
-    /**阅读进度**/
-    @ColumnInfo(defaultValue = "0")
-    var durPos: Int = 0
+    override var variable: String? = null
 ) : BaseRssArticle {
 
     @delegate:Transient
@@ -50,8 +44,6 @@ data class RssStar(
         content = content,
         image = image,
         group = group,
-        variable = variable,
-        type = type,
-        durPos = durPos
+        variable = variable
     )
 }

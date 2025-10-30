@@ -17,7 +17,6 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
-import io.legado.app.data.appDb
 import io.legado.app.databinding.ViewReadMenuBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
@@ -34,7 +33,6 @@ import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.primaryTextColor
 import io.legado.app.model.ReadBook
-import io.legado.app.ui.book.source.SourceCallBack
 import io.legado.app.ui.browser.WebViewActivity
 import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
@@ -122,11 +120,6 @@ class ReadMenu @JvmOverloads constructor(
             binding.tvSourceAction.text =
                 ReadBook.bookSource?.bookSourceName ?: context.getString(R.string.book_source)
             binding.tvSourceAction.isGone = ReadBook.isLocalBook
-            ReadBook.bookSource?.let {
-                if (it.customButton) {
-                    binding.tvCustomBtn.visibility = VISIBLE
-                }
-            }
             callBack.upSystemUiVisibility()
             binding.llBrightness.visible(showBrightnessView)
         }
@@ -174,7 +167,6 @@ class ReadMenu @JvmOverloads constructor(
             fabNightTheme.setImageResource(R.drawable.ic_brightness)
         }
         initAnimation()
-        tvCustomBtn.setColorFilter(context.accentColor)
         if (immersiveMenu) {
             val lightTextColor = ColorUtils.withAlpha(ColorUtils.lightenColor(textColor), 0.75f)
             titleBar.setTextColor(textColor)
@@ -373,12 +365,6 @@ class ReadMenu @JvmOverloads constructor(
         tvChapterName.setOnLongClickListener(chapterViewLongClickListener)
         tvChapterUrl.setOnClickListener(chapterViewClickListener)
         tvChapterUrl.setOnLongClickListener(chapterViewLongClickListener)
-        tvCustomBtn.setOnClickListener {
-            val book = ReadBook.book ?: return@setOnClickListener
-            if (activity == null) return@setOnClickListener
-            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex)
-            SourceCallBack.callBackBtn(activity!!, SourceCallBack.CLICK_CUSTOM_BUTTON, ReadBook.bookSource, book, chapter)
-        }
         //书源操作
         tvSourceAction.onClick {
             sourceMenu.menu.findItem(R.id.menu_login).isVisible =

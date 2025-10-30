@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.flow
 import org.mozilla.javascript.Context
 import splitties.init.appCtx
 import kotlin.coroutines.coroutineContext
-import io.legado.app.constant.AppPattern
 
 /**
  * 获取目录
@@ -38,8 +37,7 @@ object BookChapterList {
         book: Book,
         baseUrl: String,
         redirectUrl: String,
-        body: String?,
-        isFromBookInfo: Boolean = false
+        body: String?
     ): List<BookChapter> {
         body ?: throw NoStackTraceException(
             appCtx.getString(R.string.error_get_web_content, baseUrl)
@@ -61,8 +59,7 @@ object BookChapterList {
         var chapterData =
             analyzeChapterList(
                 book, baseUrl, redirectUrl, body,
-                tocRule, listRule, bookSource, log = true,
-                isFromBookInfo = isFromBookInfo
+                tocRule, listRule, bookSource, log = true
             )
         chapterList.addAll(chapterData.first)
         when (chapterData.second.size) {
@@ -81,8 +78,7 @@ object BookChapterList {
                     res.body?.let { nextBody ->
                         chapterData = analyzeChapterList(
                             book, nextUrl, nextUrl,
-                            nextBody, tocRule, listRule, bookSource,
-                            isFromBookInfo = isFromBookInfo
+                            nextBody, tocRule, listRule, bookSource
                         )
                         nextUrl = chapterData.second.firstOrNull() ?: ""
                         chapterList.addAll(chapterData.first)
@@ -110,8 +106,7 @@ object BookChapterList {
                     val res = analyzeUrl.getStrResponseAwait() //控制并发访问
                     analyzeChapterList(
                         book, urlStr, res.url,
-                        res.body!!, tocRule, listRule, bookSource, false,
-                        isFromBookInfo = isFromBookInfo
+                        res.body!!, tocRule, listRule, bookSource, false
                     ).first
                 }.collect {
                     chapterList.addAll(it)
@@ -168,7 +163,7 @@ object BookChapterList {
             list.getOrElse(book.simulatedTotalChapterNum() - 1) { list.last() }
                 .getDisplayTitle(replaceRules, book.getUseReplaceRule())
         coroutineContext.ensureActive()
-        upChapterInfo(list, book)
+        getWordCount(list, book)
         return list
     }
 
@@ -181,10 +176,9 @@ object BookChapterList {
         listRule: String,
         bookSource: BookSource,
         getNextUrl: Boolean = true,
-        log: Boolean = false,
-        isFromBookInfo:Boolean
+        log: Boolean = false
     ): Pair<List<BookChapter>, List<String>> {
-        val analyzeRule = AnalyzeRule(book, bookSource, false, isFromBookInfo)
+        val analyzeRule = AnalyzeRule(book, bookSource)
         analyzeRule.setContent(body).setBaseUrl(baseUrl)
         analyzeRule.setRedirectUrl(redirectUrl)
         analyzeRule.setCoroutineContext(coroutineContext)
@@ -227,24 +221,11 @@ object BookChapterList {
                 analyzeRule.setChapter(bookChapter)
                 bookChapter.title = analyzeRule.getString(nameRule)
                 bookChapter.url = analyzeRule.getString(urlRule)
-                val info = analyzeRule.getString(upTimeRule)
+                bookChapter.tag = analyzeRule.getString(upTimeRule)
                 val isVolume = analyzeRule.getString(isVolumeRule)
                 bookChapter.isVolume = false
                 if (isVolume.isTrue()) {
                     bookChapter.isVolume = true
-                    bookChapter.tag = info
-                }
-                else {
-                    if (AppConfig.tocCountWords) {
-                        AppPattern.wordCountRegex.find(info)?.let { match ->
-                            bookChapter.apply {
-                                wordCount = match.groupValues[1].trim()
-                                tag = info.replaceFirst(match.value, "")
-                            }
-                        } ?: run { bookChapter.tag = info }
-                    } else {
-                        bookChapter.tag = info
-                    }
                 }
                 if (bookChapter.url.isEmpty()) {
                     if (bookChapter.isVolume) {
@@ -288,18 +269,17 @@ object BookChapterList {
         return Pair(chapterList, nextUrlList)
     }
 
-    private fun upChapterInfo(list: ArrayList<BookChapter>, book: Book) {
+    private fun getWordCount(list: ArrayList<BookChapter>, book: Book) {
         if (!AppConfig.tocCountWords) {
             return
         }
         val chapterList = appDb.bookChapterDao.getChapterList(book.bookUrl)
         if (chapterList.isNotEmpty()) {
-            val map = chapterList.associateBy({ it.getFileName() }, {Triple(it.wordCount, it.variable, it.imgUrl)})
+            val map = chapterList.associateBy({ it.getFileName() }, { it.wordCount })
             for (bookChapter in list) {
-                map[bookChapter.getFileName()]?.let { info ->
-                    bookChapter.wordCount = info.first
-                    bookChapter.variable = info.second
-                    bookChapter.imgUrl = info.third
+                val wordCount = map[bookChapter.getFileName()]
+                if (wordCount != null) {
+                    bookChapter.wordCount = wordCount
                 }
             }
         }

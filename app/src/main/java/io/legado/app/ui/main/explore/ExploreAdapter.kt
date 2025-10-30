@@ -36,7 +36,6 @@ class ExploreAdapter(context: Context, val callBack: CallBack) :
     private val recycler = arrayListOf<View>()
     private var exIndex = -1
     private var scrollTo = -1
-    private var lastClickTime: Long = 0
 
     override fun getViewBinding(parent: ViewGroup): ItemFindBookBinding {
         return ItemFindBookBinding.inflate(inflater, parent, false)
@@ -97,20 +96,11 @@ class ExploreAdapter(context: Context, val callBack: CallBack) :
                     tv.setOnClickListener(null)
                 } else {
                     tv.setOnClickListener {
-                        val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastClickTime < 200) {
-                            return@setOnClickListener // 按钮200ms防抖
+                        if (kind.title.startsWith("ERROR:")) {
+                            it.activity?.showDialogFragment(TextDialog("ERROR", kind.url))
+                        } else {
+                            callBack.openExplore(sourceUrl, kind.title, kind.url)
                         }
-                        lastClickTime = currentTime
-                        it.isSelected = true
-                        it.postDelayed({
-                            it.isSelected = false
-                            if (kind.title.startsWith("ERROR:")) {
-                                it.activity?.showDialogFragment(TextDialog("ERROR", kind.url))
-                            } else {
-                                callBack.openExplore(sourceUrl, kind.title, kind.url)
-                            }
-                        }, 100) // 点击动效,期间展示动画,不响应动作
                     }
                 }
             }

@@ -30,7 +30,6 @@ import io.legado.app.help.book.isAudio
 import io.legado.app.help.book.isImage
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isLocalTxt
-import io.legado.app.help.book.isVideo
 import io.legado.app.help.book.isWebFile
 import io.legado.app.help.book.removeType
 import io.legado.app.help.config.AppConfig
@@ -42,7 +41,6 @@ import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.model.BookCover
-import io.legado.app.model.VideoPlay
 import io.legado.app.model.remote.RemoteBookWebDav
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.audio.AudioPlayActivity
@@ -54,12 +52,10 @@ import io.legado.app.ui.book.manga.ReadMangaActivity
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.read.ReadBookActivity.Companion.RESULT_DELETED
 import io.legado.app.ui.book.search.SearchActivity
-import io.legado.app.ui.book.source.SourceCallBack
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.book.toc.TocActivityResult
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.login.SourceLoginActivity
-import io.legado.app.ui.video.VideoPlayerActivity
 import io.legado.app.ui.widget.dialog.PhotoDialog
 import io.legado.app.ui.widget.dialog.VariableDialog
 import io.legado.app.ui.widget.dialog.WaitDialog
@@ -74,6 +70,7 @@ import io.legado.app.utils.gone
 import io.legado.app.utils.longToastOnUi
 import io.legado.app.utils.openFileUri
 import io.legado.app.utils.sendToClip
+import io.legado.app.utils.shareWithQr
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
@@ -95,33 +92,7 @@ class BookInfoActivity :
             viewModel.getBook(false)?.let { book ->
                 lifecycleScope.launch {
                     withContext(IO) {
-                        if (book.isVideo) {
-                            VideoPlay.volumes.clear()
-                            appDb.bookChapterDao.getChapterList(book.bookUrl).forEach { it ->
-                                if (it.isVolume) {
-                                    VideoPlay.volumes.add(it)
-                                }
-                            }
-                            if (VideoPlay.volumes.isEmpty()) {
-                                VideoPlay.chapterInVolumeIndex = it.first
-                            } else {
-                                for ((index, volume) in VideoPlay.volumes.reversed().withIndex()) {
-                                    if (volume.index < it.first) {
-                                        book.chapterInVolumeIndex = it.first - volume.index - 1
-                                        book.durVolumeIndex = VideoPlay.volumes.size - index - 1
-                                        VideoPlay.durVolume = volume
-                                        break
-                                    } else if (volume.index == it.first) {
-                                        book.chapterInVolumeIndex = 0
-                                        book.durVolumeIndex = VideoPlay.volumes.size - index - 1
-                                        VideoPlay.durVolume = volume
-                                        break
-                                    }
-                                }
-                            }
-                        } else {
-                            book.durChapterIndex = it.first
-                        }
+                        book.durChapterIndex = it.first
                         book.durChapterPos = it.second
                         chapterChanged = it.third
                         appDb.bookDao.update(book)
@@ -177,7 +148,6 @@ class BookInfoActivity :
     private var chapterChanged = false
     private val waitDialog by lazy { WaitDialog(this) }
     private var editMenuItem: MenuItem? = null
-    private var menuCustomBtn: MenuItem? = null
     private val book get() = viewModel.getBook(false)
 
     override val binding by viewBinding(ActivityBookInfoBinding::inflate)
@@ -187,9 +157,8 @@ class BookInfoActivity :
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         binding.titleBar.setBackgroundResource(R.color.transparent)
         binding.refreshLayout?.setColorSchemeColors(accentColor)
-        binding.arcView?.setBgColor(backgroundColor)
+        binding.arcView.setBgColor(backgroundColor)
         binding.llInfo.setBackgroundColor(backgroundColor)
-        binding.ivCoverC.setCardBackgroundColor(backgroundColor)
         binding.flAction.setBackgroundColor(bottomBackground)
         binding.flAction.applyNavigationBarPadding()
         binding.tvShelf.setTextColor(getPrimaryTextColor(ColorUtils.isColorLight(bottomBackground)))
@@ -199,7 +168,6 @@ class BookInfoActivity :
         }
         viewModel.bookData.observe(this) { showBook(it) }
         viewModel.chapterListData.observe(this) { upLoading(false, it) }
-        viewModel.customBtnListData.observe(this) { menuCustomBtn?.isVisible = it }
         viewModel.waitDialogData.observe(this) { upWaitDialogStatus(it) }
         viewModel.initData(intent)
         initViewEvent()
@@ -208,7 +176,6 @@ class BookInfoActivity :
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.book_info, menu)
         editMenuItem = menu.findItem(R.id.menu_edit)
-        menuCustomBtn = menu.findItem(R.id.menu_custom_btn)
         return super.onCompatCreateOptionsMenu(menu)
     }
 
@@ -236,14 +203,6 @@ class BookInfoActivity :
 
     override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_custom_btn -> {
-                viewModel.bookSource?.customButton?.let {
-                    viewModel.getBook()?.let { book ->
-                        SourceCallBack.callBackBtn(this,SourceCallBack.CLICK_CUSTOM_BUTTON, viewModel.bookSource, book, null)
-                    }
-                }
-            }
-
             R.id.menu_edit -> {
                 viewModel.getBook()?.let {
                     infoEditResult.launch {
@@ -254,15 +213,9 @@ class BookInfoActivity :
 
             R.id.menu_share_it -> {
                 viewModel.getBook()?.let {
-                    SourceCallBack.callBackBtn(this,SourceCallBack.CLICK_SHARE_BOOK, viewModel.bookSource, it, null) {
-                        val bookJson = GSON.toJson(it)
-                        val shareStr = "${it.bookUrl}#$bookJson"
-                        val intent = Intent(Intent.ACTION_SEND)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        intent.putExtra(Intent.EXTRA_TEXT, shareStr)
-                        intent.type = "text/plain"
-                        startActivity(Intent.createChooser(intent, it.name))
-                    }
+                    val bookJson = GSON.toJson(it)
+                    val shareStr = "${it.bookUrl}#$bookJson"
+                    shareWithQr(shareStr, it.name)
                 }
             }
 
@@ -274,7 +227,6 @@ class BookInfoActivity :
                 startActivity<SourceLoginActivity> {
                     putExtra("type", "bookSource")
                     putExtra("key", it.bookSourceUrl)
-                    putExtra("bookUrl", book?.bookUrl)
                 }
             }
 
@@ -387,7 +339,7 @@ class BookInfoActivity :
         tvOrigin.text = getString(R.string.origin_show, book.originName)
         tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
         tvIntro.text = book.getDisplayIntro()
-        llToc.visible(!book.isWebFile)
+        llToc?.visible(!book.isWebFile)
         upTvBookshelf()
         upKinds(book)
         upGroup(book.group)
@@ -415,7 +367,7 @@ class BookInfoActivity :
     }
 
     private fun showCover(book: Book) {
-        binding.ivCover.load(book.getDisplayCover(), book, false, book.origin) {
+        binding.ivCover.load(book.getDisplayCover(), book.name, book.author, false, book.origin) {
             if (!AppConfig.isEInkMode) {
                 BookCover.loadBlur(this, book.getDisplayCover(), false, book.origin)
                     .into(binding.bgBook)
@@ -551,19 +503,15 @@ class BookInfoActivity :
         }
         tvAuthor.setOnClickListener {
             viewModel.getBook(false)?.let { book ->
-                SourceCallBack.callBackBtn(this@BookInfoActivity, SourceCallBack.CLICK_AUTHOR, viewModel.bookSource, book, null) {
-                    startActivity<SearchActivity> {
-                        putExtra("key", book.author)
-                    }
+                startActivity<SearchActivity> {
+                    putExtra("key", book.author)
                 }
             }
         }
         tvName.setOnClickListener {
             viewModel.getBook(false)?.let { book ->
-                SourceCallBack.callBackBtn(this@BookInfoActivity, SourceCallBack.CLICK_BOOK_NAME, viewModel.bookSource, book, null) {
-                    startActivity<SearchActivity> {
-                        putExtra("key", book.name)
-                    }
+                startActivity<SearchActivity> {
+                    putExtra("key", book.name)
                 }
             }
         }
@@ -760,11 +708,6 @@ class BookInfoActivity :
         when {
             book.isAudio -> readBookResult.launch(
                 Intent(this, AudioPlayActivity::class.java)
-                    .putExtra("bookUrl", book.bookUrl)
-                    .putExtra("inBookshelf", viewModel.inBookshelf)
-            )
-            book.isVideo -> readBookResult.launch(
-                Intent(this, VideoPlayerActivity::class.java)
                     .putExtra("bookUrl", book.bookUrl)
                     .putExtra("inBookshelf", viewModel.inBookshelf)
             )

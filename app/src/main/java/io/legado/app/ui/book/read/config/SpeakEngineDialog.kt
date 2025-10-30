@@ -31,7 +31,6 @@ import io.legado.app.ui.association.ImportHttpTtsDialog
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.utils.ACache
-import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.fromJsonObject
@@ -44,7 +43,6 @@ import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.startActivity
-import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
 import kotlinx.coroutines.Dispatchers.IO
@@ -52,7 +50,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
-import java.io.File
 
 /**
  * tts引擎管理
@@ -181,7 +178,6 @@ class SpeakEngineDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
 
     override fun onMenuItemClick(item: MenuItem?): Boolean {
         when (item?.itemId) {
-            R.id.menu_clear -> clearCache()
             R.id.menu_add -> showDialogFragment<HttpTtsEditDialog>()
             R.id.menu_default -> viewModel.importDefault()
             R.id.menu_import_local -> importDocResult.launch {
@@ -200,18 +196,6 @@ class SpeakEngineDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
             }
         }
         return true
-    }
-
-    fun clearCache() {
-        execute {
-            ReadAloud.upReadAloudClass()
-            val ttsFolderPath = "${requireContext().cacheDir.absolutePath}${File.separator}httpTTS${File.separator}"
-            FileUtils.listDirsAndFiles(ttsFolderPath)?.forEach {
-                FileUtils.delete(it.absolutePath)
-            }
-            toastOnUi(R.string.clear_cache_success)
-        }
-
     }
 
     private fun importAlert() {
@@ -292,13 +276,7 @@ class SpeakEngineDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
                 }
                 ivMenuDelete.setOnClickListener {
                     getItemByLayoutPosition(holder.layoutPosition)?.let { httpTTS ->
-                        alert(R.string.draw) {
-                            setMessage(getString(R.string.sure_del) + "\n" + httpTTS.name)
-                            noButton()
-                            yesButton {
-                                appDb.httpTTSDao.delete(httpTTS)
-                            }
-                        }
+                        appDb.httpTTSDao.delete(httpTTS)
                     }
                 }
             }

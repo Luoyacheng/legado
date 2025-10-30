@@ -60,7 +60,8 @@ class ExploreShowAdapter(context: Context, val callBack: CallBack) :
             }
             ivCover.load(
                 item.coverUrl,
-                item,
+                item.name,
+                item.author,
                 AppConfig.loadCoverOnlyWifi,
                 item.origin
             )

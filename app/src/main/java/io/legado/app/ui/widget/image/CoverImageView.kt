@@ -1,16 +1,14 @@
 package io.legado.app.ui.widget.image
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Outline
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.text.TextPaint
 import android.util.AttributeSet
-import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.fragment.app.Fragment
@@ -28,17 +26,6 @@ import io.legado.app.lib.theme.accentColor
 import io.legado.app.model.BookCover
 import io.legado.app.utils.textHeight
 import io.legado.app.utils.toStringArray
-import android.view.ViewOutlineProvider
-import androidx.core.graphics.createBitmap
-import io.legado.app.data.entities.Book
-import io.legado.app.data.entities.SearchBook
-import io.legado.app.utils.BitmapUtils
-import io.legado.app.utils.FileUtils
-import io.legado.app.utils.externalFiles
-import splitties.init.appCtx
-import java.io.File
-import java.io.FileOutputStream
-import androidx.core.graphics.scale
 
 /**
  * 封面
@@ -48,15 +35,12 @@ class CoverImageView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
 ) : AppCompatImageView(context, attrs) {
-    companion object {
-        private val rootPath by lazy { appCtx.externalFiles }
-    }
+    private var filletPath = Path()
     private var viewWidth: Float = 0f
     private var viewHeight: Float = 0f
     private var defaultCover = true
     var bitmapPath: String? = null
         private set
-    private var isSaveBook = false
     private var name: String? = null
     private var author: String? = null
     private var nameHeight = 0f
@@ -80,7 +64,7 @@ class CoverImageView @JvmOverloads constructor(
         if (params != null) {
             val width = params.width
             if (width >= 0) {
-                params.height = width * 4 / 3
+                params.height = width * 7 / 5
             } else {
                 params.height = ViewGroup.LayoutParams.WRAP_CONTENT
             }
@@ -90,24 +74,38 @@ class CoverImageView @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val measuredWidth = MeasureSpec.getSize(widthMeasureSpec)
-        val measuredHeight = measuredWidth * 4 / 3
+        val measuredHeight = measuredWidth * 7 / 5
         super.onMeasure(
             widthMeasureSpec,
             MeasureSpec.makeMeasureSpec(measuredHeight, MeasureSpec.EXACTLY)
         )
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        outlineProvider = object : ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: Outline) {
-                outline.setRoundRect(0, 0, w, h, 12f)
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        viewWidth = width.toFloat()
+        viewHeight = height.toFloat()
+        filletPath.reset()
+        if (width > 10 && viewHeight > 10) {
+            filletPath.apply {
+                moveTo(10f, 0f)
+                lineTo(viewWidth - 10, 0f)
+                quadTo(viewWidth, 0f, viewWidth, 10f)
+                lineTo(viewWidth, viewHeight - 10)
+                quadTo(viewWidth, viewHeight, viewWidth - 10, viewHeight)
+                lineTo(10f, viewHeight)
+                quadTo(0f, viewHeight, 0f, viewHeight - 10)
+                lineTo(0f, 10f)
+                quadTo(0f, 0f, 10f, 0f)
+                close()
             }
         }
-        clipToOutline = true
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (!filletPath.isEmpty) {
+            canvas.clipPath(filletPath)
+        }
         super.onDraw(canvas)
         if (defaultCover && !isInEditMode) {
             drawNameAuthor(canvas)
@@ -116,64 +114,27 @@ class CoverImageView @JvmOverloads constructor(
 
     private fun drawNameAuthor(canvas: Canvas) {
         if (!BookCover.drawBookName) return
-        var pathName = name.toString()
-        if (isSaveBook) {
-            if (BookCover.drawBookAuthor) {
-                pathName += author.toString()
-            }
-            pathName += ".png"
-            val filePath =FileUtils.getPath(rootPath, "covers_bitmap", pathName)
-            val vFile = File(filePath)
-            if (vFile.exists()) {
-                val cacheBitmap = BitmapUtils.decodeBitmap(vFile.absolutePath, width, height)?.scale(width, height) //先近似缩放再精确缩放
-                if (cacheBitmap != null) {
-                    canvas.drawBitmap(cacheBitmap, 0f, 0f, null)
-                    return
-                }
-            }
-        }
-        viewWidth = width.toFloat()
-        viewHeight = height.toFloat()
-        val bitmap = createBitmap(width, height)
-        val bitmapCanvas = Canvas(bitmap)
         var startX = width * 0.2f
         var startY = viewHeight * 0.2f
         name?.toStringArray()?.let { name ->
-            var line = 0
-            namePaint.textSize = viewWidth / 7
-            namePaint.strokeWidth = namePaint.textSize / 6
+            namePaint.textSize = viewWidth / 6
+            namePaint.strokeWidth = namePaint.textSize / 5
             name.forEachIndexed { index, char ->
                 namePaint.color = Color.WHITE
                 namePaint.style = Paint.Style.STROKE
-                bitmapCanvas.drawText(char, startX, startY, namePaint)
+                canvas.drawText(char, startX, startY, namePaint)
                 namePaint.color = context.accentColor
                 namePaint.style = Paint.Style.FILL
-                bitmapCanvas.drawText(char, startX, startY, namePaint)
+                canvas.drawText(char, startX, startY, namePaint)
                 startY += namePaint.textHeight
-                if (startY > viewHeight * 0.9) {
-                    if ((name.size - index - 1) == 1) { //只剩一个字
-                        startY -= namePaint.textHeight / 5
-                        namePaint.textSize = viewWidth / 9
-                        return@forEachIndexed
-                    }
+                if (startY > viewHeight * 0.8) {
                     startX += namePaint.textSize
-                    line++
                     namePaint.textSize = viewWidth / 10
-                    startY = viewHeight * 0.2f + namePaint.textHeight * line
-                }
-                else if (startY > viewHeight * 0.8 && (name.size - index - 1) > 2) { //剩余字数大于2
-                    startX += namePaint.textSize
-                    line++
-                    namePaint.textSize = viewWidth / 10
-                    startY = viewHeight * 0.2f + namePaint.textHeight * line
+                    startY = (viewHeight - (name.size - index - 1) * namePaint.textHeight) / 2
                 }
             }
         }
-        if (!BookCover.drawBookAuthor){
-            if (isSaveBook) { saveBitmapToFileAsPng(bitmap, pathName) }
-            canvas.drawBitmap(bitmap, 0f, 0f, null)
-            return
-        }
+        if (!BookCover.drawBookAuthor) return
         author?.toStringArray()?.let { author ->
             authorPaint.textSize = viewWidth / 10
             authorPaint.strokeWidth = authorPaint.textSize / 5
@@ -183,35 +144,20 @@ class CoverImageView @JvmOverloads constructor(
             author.forEach {
                 authorPaint.color = Color.WHITE
                 authorPaint.style = Paint.Style.STROKE
-                bitmapCanvas.drawText(it, startX, startY, authorPaint)
+                canvas.drawText(it, startX, startY, authorPaint)
                 authorPaint.color = context.accentColor
                 authorPaint.style = Paint.Style.FILL
-                bitmapCanvas.drawText(it, startX, startY, authorPaint)
+                canvas.drawText(it, startX, startY, authorPaint)
                 startY += authorPaint.textHeight
                 if (startY > viewHeight * 0.95) {
                     return@let
                 }
             }
         }
-        if (isSaveBook) { saveBitmapToFileAsPng(bitmap, pathName) }
-        canvas.drawBitmap(bitmap, 0f, 0f, null)
-    }
-
-    private fun saveBitmapToFileAsPng(bitmap: Bitmap, pathName: String) {
-        Thread {
-            try {
-                val file = FileUtils.createFileIfNotExist(rootPath, "covers_bitmap", pathName)
-                FileOutputStream(file).use { fos ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }.start()
     }
 
     fun setHeight(height: Int) {
-        val width = height * 3 / 4
+        val width = height * 5 / 7
         minimumWidth = width
     }
 
@@ -244,20 +190,8 @@ class CoverImageView @JvmOverloads constructor(
 
     fun load(
         path: String? = null,
-        searchBook: SearchBook? = null,
-        loadOnlyWifi: Boolean = false,
-        sourceOrigin: String? = null,
-        fragment: Fragment? = null,
-        lifecycle: Lifecycle? = null
-    ) {
-        this.name = searchBook?.name?.replace(AppPattern.bdRegex, "")?.trim()
-        this.author = searchBook?.author?.replace(AppPattern.bdRegex, "")?.trim()
-        load(path, null, loadOnlyWifi, sourceOrigin, fragment, lifecycle, null)
-    }
-
-    fun load(
-        path: String? = null,
-        book: Book? = null,
+        name: String? = null,
+        author: String? = null,
         loadOnlyWifi: Boolean = false,
         sourceOrigin: String? = null,
         fragment: Fragment? = null,
@@ -265,11 +199,8 @@ class CoverImageView @JvmOverloads constructor(
         onLoadFinish: (() -> Unit)? = null
     ) {
         this.bitmapPath = path
-        book?.let{
-            isSaveBook = true
-            this.name = it.name.replace(AppPattern.bdRegex, "").trim()
-            this.author = it.author.replace(AppPattern.bdRegex, "").trim()
-        }
+        this.name = name?.replace(AppPattern.bdRegex, "")?.trim()
+        this.author = author?.replace(AppPattern.bdRegex, "")?.trim()
         defaultCover = true
         invalidate()
         if (AppConfig.useDefaultCover) {
