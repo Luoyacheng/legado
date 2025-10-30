@@ -23,15 +23,19 @@ import io.legado.app.utils.toastOnUi
 class AudioPlayViewModel(application: Application) : BaseViewModel(application) {
     val titleData = MutableLiveData<String>()
     val coverData = MutableLiveData<String>()
+    val bookUrl = MutableLiveData<String>()
 
     fun initData(intent: Intent) = AudioPlay.apply {
         execute {
-            val bookUrl = intent.getStringExtra("bookUrl") ?: book?.bookUrl ?: return@execute
-            val book = appDb.bookDao.getBook(bookUrl) ?: return@execute
             inBookshelf = intent.getBooleanExtra("inBookshelf", true)
-            initBook(book)
+            val bookUrl = intent.getStringExtra("bookUrl") ?: book?.bookUrl ?: return@execute
+            val targetBook = appDb.bookDao.getBook(bookUrl) ?: run {
+                inBookshelf = false
+                book?.also { appDb.bookDao.insert(it) } ?: return@execute
+            }
+            initBook(targetBook)
         }.onFinally {
-            saveRead()
+            saveRead(true)
         }
     }
 
@@ -44,6 +48,7 @@ class AudioPlayViewModel(application: Application) : BaseViewModel(application) 
         }
         titleData.postValue(book.name)
         coverData.postValue(book.getDisplayCover())
+        bookUrl.postValue(book.bookUrl)
         if (book.tocUrl.isEmpty() && !loadBookInfo(book)) {
             return
         }
