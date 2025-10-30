@@ -14,6 +14,7 @@ import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.RssArticle
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.CacheManager
+import io.legado.app.help.ConcurrentRateLimiter.Companion.updateConcurrentRate
 import io.legado.app.help.JsExtensions
 import io.legado.app.help.http.CookieStore
 import io.legado.app.help.source.getShareScope
@@ -52,7 +53,8 @@ import kotlin.coroutines.EmptyCoroutineContext
 class AnalyzeRule(
     private var ruleData: RuleDataInterface? = null,
     private val source: BaseSource? = null,
-    private val preUpdateJs: Boolean = false
+    private val preUpdateJs: Boolean = false,
+    private var isFromBookInfo : Boolean? = null
 ) : JsExtensions {
 
     private val book get() = ruleData as? BaseBook
@@ -766,6 +768,15 @@ class AnalyzeRule(
     }
 
     /**
+     * 设置并发率
+     */
+    fun setConcurrent(value: String) {
+        source?.let {
+            updateConcurrentRate(it.getKey(),value)
+        }
+    }
+
+    /**
      * 执行JS
      */
     fun evalJS(jsStr: String, result: Any? = null): Any? {
@@ -782,6 +793,7 @@ class AnalyzeRule(
             bindings["src"] = content
             bindings["nextChapterUrl"] = nextChapterUrl
             bindings["rssArticle"] = rssArticle
+            bindings["fromBookInfo"] = isFromBookInfo
         }
         val topScope = source?.getShareScope(coroutineContext) ?: topScopeRef?.get()
         val scope = if (topScope == null) {
@@ -841,6 +853,9 @@ class AnalyzeRule(
      */
     fun reGetBook() {
         if (!preUpdateJs) throw NoStackTraceException("只能在 preUpdateJs 中调用")
+        if (isFromBookInfo == true) {
+            log("重新获取book")
+        }
         val bookSource = source as? BookSource
         val book = book as? Book
         if (bookSource == null || book == null) return
@@ -863,6 +878,10 @@ class AnalyzeRule(
      */
     fun refreshTocUrl() {
         if (!preUpdateJs) throw NoStackTraceException("只能在 preUpdateJs 中调用")
+        if (isFromBookInfo == true) {
+            log("已跳过重复加载详情页，请优化代码")
+            return
+        }
         val bookSource = source as? BookSource
         val book = book as? Book
         if (bookSource == null || book == null) return
