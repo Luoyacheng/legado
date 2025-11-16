@@ -80,6 +80,8 @@ android {
             applicationIdSuffix '.release'
             if (getApplicationIdSuffix() == '.releaseA') {
                 manifestPlaceholders.put("app_name", "@string/app_name_a")
+            } else if (getApplicationIdSuffix() == '.releaseR') {
+                manifestPlaceholders.put("app_name", "@string/app_name_r")
             } else {
                 manifestPlaceholders.put("app_name", "@string/app_name")
             }
