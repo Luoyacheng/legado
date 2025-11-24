@@ -40,7 +40,7 @@ jobs:
       updateLog_content: ${{ steps.updateLog.outputs.body }}
       build_matrix: ${{ steps.set-matrix.outputs.build_matrix }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 20
       - id: set-ver
@@ -131,7 +131,7 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
       VERSIONL: ${{ needs.prepare.outputs.versionL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set up JDK 17
@@ -235,7 +235,7 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - uses: actions/download-artifact@v5
@@ -311,7 +311,7 @@ jobs:
       #蓝奏云分享链接
       LANZOU_URL: ${{ secrets.LANZOU_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v5
         with:
           path: apk/
