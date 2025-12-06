@@ -6,7 +6,7 @@ agp = "8.13.1"
 appcompat = "1.7.1"
 colorpicker = "1.1.0"
 #不要更新，会导致安卓6进正文崩溃
-commonsText = "1.13.1"
+commonsText = "1.14.0"
 constraintlayout = "2.2.1"
 core = "1.17.0"
 #不要更新，提高了最低SDK
