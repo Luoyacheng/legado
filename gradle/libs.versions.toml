@@ -50,7 +50,7 @@ desugar = "2.1.5"
 
 activity = "1.11.0"
 #kotlinxSerialization = "1.8.0"
-swiperefreshlayout = "1.1.0"
+swiperefreshlayout = "1.2.0"
 #noinspection GradleDependency
 recyclerview = "1.4.0"
 #noinspection GradleDependency
