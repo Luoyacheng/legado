@@ -60,7 +60,7 @@ commonsText = "1.13.1"
 #noinspection GradleDependency
 activity = "1.11.0"
 #noinspection GradleDependency
-lifecycle = "2.9.4"
+lifecycle = "2.10.0"
 #noinspection GradleDependency
 room = "2.7.1"
 #noinspection GradleDependency
