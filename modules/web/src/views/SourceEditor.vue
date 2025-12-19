@@ -15,8 +15,9 @@ import type { SourceConfig } from '@/config/sourceConfig'
 useDark()
 
 let config: SourceConfig
-
-if (/bookSource/i.test(location.href)) {
+const isBookSource = ref<boolean>(/bookSource/i.test(location.href))
+provide('isBookSource', isBookSource)
+if (isBookSource.value) {
   config = bookSourceConfig as SourceConfig
   document.title = '书源管理'
 } else {

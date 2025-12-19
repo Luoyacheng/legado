@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { Link } from '@element-plus/icons-vue'
+const isBookSource = inject<Ref<boolean>>('isBookSource', ref(true))
+const sourceTitle = computed(() => {
+  return isBookSource.value ? '书源' : '订阅源'
+})
+const sourcePath = computed(() => {
+  return isBookSource.value ? 'ruleHelp' : 'rssRuleHelp'
+})
 </script>
 <template>
   <el-link :icon="Link" href="/help/#appHelp" target="_blank"
     >APP帮助文档</el-link
   ><br />
-  <el-link :icon="Link" href="/help/#ruleHelp" target="_blank"
-    >书源制作教程</el-link
+  <el-link :icon="Link" :href="`/help/#${sourcePath}`" target="_blank"
+    >{{ sourceTitle }}制作教程</el-link
   ><br />
   <el-link :icon="Link" href="/help/#jsHelp" target="_blank"
     >js变量和函数</el-link
