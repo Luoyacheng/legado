@@ -6,7 +6,7 @@ export default {
         title: '源类型',
         id: 'bookSourceType',
         type: 'Array',
-        array: ['文本', '音频', '图片', '文件'],
+        array: ['文本', '音频', '图片', '文件', '视频'],
         required: true,
       },
       {
@@ -585,7 +585,7 @@ id: "deleteUrl",
         type: 'Boolean',
       },
       {
-        title: '启用时间监听',
+        title: '启用事件监听',
         id: 'eventListener',
         type: 'Boolean',
       },
