@@ -414,6 +414,13 @@ export default {
         hint: '选择正文内容 (规则结果为String)',
       },
       {
+        title: '副文规则',
+        namespace: 'ruleContent',
+        id: 'subContent',
+        type: 'String',
+        hint: '选择副文内容 (规则结果为String)',
+      },
+      {
         title: '标题规则',
         namespace: 'ruleContent',
         id: 'title',
@@ -468,6 +475,13 @@ export default {
         id: 'payAction',
         type: 'String',
         hint: '填写JavaScript 返回购买链接或者调用购买接口',
+      },
+      {
+        title: '回调操作',
+        namespace: 'ruleContent',
+        id: 'callBackJs',
+        type: 'String',
+        hint: '填写JavaScript 变量event为事件对象名称',
       },
     ],
   },
@@ -568,6 +582,16 @@ id: "deleteUrl",
       {
         title: 'CookieJar',
         id: 'enabledCookieJar',
+        type: 'Boolean',
+      },
+      {
+        title: '启用时间监听',
+        id: 'eventListener',
+        type: 'Boolean',
+      },
+      {
+        title: '启用定制按钮',
+        id: 'customButton',
         type: 'Boolean',
       },
       {

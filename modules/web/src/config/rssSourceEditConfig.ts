@@ -35,6 +35,12 @@ export default {
         hint: '描述源作者和状态',
       },
       {
+        title: '搜索地址',
+        id: 'searchUrl',
+        type: 'String',
+        hint: '[域名可省略]/search.php@kw={{key}}',
+      },
+      {
         title: '分类地址',
         id: 'sortUrl',
         type: 'String',
@@ -87,6 +93,35 @@ export default {
         id: 'jsLib',
         type: 'String',
         hint: 'js库, 可填写js或者key-value object获取在线js文件',
+      },
+    ],
+  },
+  start: {
+    name: '启动',
+    children: [
+      {
+        title: '启动页html',
+        id: 'startHtml',
+        type: 'String',
+        hint: '启动页html',
+      },
+      {
+        title: '启动页样式',
+        id: 'startStyle',
+        type: 'String',
+        hint: '启动页样式 填写css',
+      },
+      {
+        title: '启动页Js',
+        id: 'startJs',
+        type: 'String',
+        hint: '启动页Js',
+      },
+      {
+        title: '预注入Js',
+        id: 'preloadJs',
+        type: 'String',
+        hint: '在网页加载前就注入到网页的js代码\n可注入阅读js函数到网页中\n例: window.ajaxAwait = ajaxAwait;\nwindow.java = java;',
       },
     ],
   },
@@ -182,10 +217,21 @@ export default {
     name: '其他',
     children: [
       {
+        title: '源类型',
+        id: 'type',
+        type: 'Array',
+        array: ['网页', '图片', '视频'],
+      },
+      {
         title: '列表样式',
         id: 'articleStyle',
         type: 'Array',
-        array: ['默认', '大图', '双列'],
+        array: ['默认', '大图', '双列', '瀑布', '三列'],
+      },
+      {
+        title: '预加载',
+        id: 'preload',
+        type: 'Boolean',
       },
       {
         title: '加载地址',
@@ -195,6 +241,16 @@ export default {
       {
         title: '启用JS',
         id: 'enableJs',
+        type: 'Boolean',
+      },
+      {
+        title: '输出WebLog',
+        id: 'showWebLog',
+        type: 'Boolean',
+      },
+      {
+        title: '优先加载缓存',
+        id: 'cacheFirst',
         type: 'Boolean',
       },
       {
