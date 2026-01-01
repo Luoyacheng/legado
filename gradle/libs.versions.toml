@@ -55,7 +55,7 @@ commonsText = "1.13.1"
 
 # 新版本使用了 Android 8 以下无法编译的 VarHandle.compareAndExchange 方法
 #noinspection GradleDependency
-rhino = "1.8.1"
+rhino = "1.9.0"
 
 #noinspection GradleDependency,NewerVersionAvailable
 media3 = "1.8.0"
