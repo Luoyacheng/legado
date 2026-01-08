@@ -107,8 +107,11 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 toastOnUi(R.string.double_click_exit)
                 exitTime = System.currentTimeMillis()
             } else {
-                if (BaseReadAloudService.pause) {
-                    finish()
+            if (BaseReadAloudService.pause) {
+                finish()
+            } else {
+                if (AppConfig.hideAppInRecentTasks) {
+                    finishAndRemoveTask()
                 } else {
                     moveTaskToBack(true)
                 }
