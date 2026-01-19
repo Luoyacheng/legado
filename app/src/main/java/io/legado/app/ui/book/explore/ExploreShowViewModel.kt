@@ -40,6 +40,7 @@ class ExploreShowViewModel(application: Application) : BaseViewModel(application
                     .forEach {
                         keys.add("${it.name}-${it.author}")
                         keys.add(it.name)
+                        keys.add(it.bookUrl)
                     }
                 keys
             }.catch {
@@ -82,12 +83,12 @@ class ExploreShowViewModel(application: Application) : BaseViewModel(application
             }
     }
 
-    fun isInBookShelf(name: String, author: String): Boolean {
-        return if (author.isNotBlank()) {
-            bookshelf.contains("$name-$author")
-        } else {
-            bookshelf.contains(name)
-        }
+    fun isInBookShelf(book: SearchBook): Boolean {
+        val name = book.name
+        val author = book.author
+        val bookUrl = book.bookUrl
+        val key = if (author.isNotBlank()) "$name-$author" else name
+        return bookshelf.contains(key) || bookshelf.contains(bookUrl)
     }
 
 }

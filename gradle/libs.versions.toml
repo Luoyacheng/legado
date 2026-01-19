@@ -9,6 +9,7 @@ constraintlayout = "2.2.1"
 core = "1.17.0"
 flexbox = "3.0.0"
 fragment = "1.8.9"
+documentfile = "1.1.0"
 
 libarchive = "1.1.6"
 glide = "5.0.5"
@@ -26,12 +27,10 @@ preference = "1.2.1"
 quickChineseTransfer = "0.2.16"
 
 splitties = "3.0.0"
-rhino = "1.8.1"
 desugar = "2.1.5"
 
 #kotlinxSerialization = "1.8.0"
 swiperefreshlayout = "1.2.0"
-webkit = "1.14.0"
 collection = "1.5.0"
 
 zxingLite = "3.3.0"
@@ -49,12 +48,18 @@ protobufJavalite = "4.26.1"
 jsoup = "1.16.2"
 
 # 新版本使用了 Android 6 以下缺少的 Arrays.setAll 方法，导致进入阅读界面会崩溃
-#noinspection NewerVersionAvailable
+#noinspection GradleDependency,NewerVersionAvailable
 commonsText = "1.13.1"
 
-#noinspection NewerVersionAvailable
+# 新版本使用了 Android 8 以下无法编译的 VarHandle.compareAndExchange 方法
+#noinspection GradleDependency
+rhino = "1.8.1"
+
+#noinspection GradleDependency,NewerVersionAvailable
 media3 = "1.8.0"
 
+#noinspection GradleDependency
+webkit = "1.14.0"
 #noinspection GradleDependency
 activity = "1.11.0"
 #noinspection GradleDependency
@@ -133,8 +138,8 @@ room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 
 glide-glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
-glide-okhttp= { module = "com.github.bumptech.glide:okhttp3-integration", version.ref ="glide" }
-glide-recyclerview={module="com.github.bumptech.glide:recyclerview-integration",version.ref="glide"}
+glide-okhttp = { module = "com.github.bumptech.glide:okhttp3-integration", version.ref = "glide" }
+glide-recyclerview = { module = "com.github.bumptech.glide:recyclerview-integration", version.ref = "glide" }
 glide-compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 glide-compose = { module = "com.github.bumptech.glide:compose", version = "1.0.0-beta01" }
 glide-ksp = { module = "com.github.bumptech.glide:ksp", version.ref = "glide" }
@@ -153,6 +158,7 @@ androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefre
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 colorpicker = { module = "com.jaredrummler:colorpicker", version.ref = "colorpicker" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commonsText" }
 desugar = { group = "com.android.tools", name = "desugar_jdk_libs_nio", version.ref = "desugar" }

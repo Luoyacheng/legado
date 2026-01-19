@@ -379,6 +379,7 @@
     <string name="page_anim_simulation">Mô phỏng</string>
     <string name="page_anim_scroll">Cuộn</string>
     <string name="page_anim_none">Không có</string>
+    <string name="disable_manga_page_anim">Tắt hiệu ứng lật trang</string>
     <string name="up_change_source_last_chapter_t">Cập nhật chương mới nhất sau khi đổi nguồn trong nền</string>
     <string name="up_change_source_last_chapter_s">Nếu được kích hoạt, cập nhật sẽ bắt đầu sau 1 phút khi phần mềm chạy</string>
     <string name="behavior_main_t">Tự động ẩn thanh công cụ</string>
@@ -603,7 +604,7 @@
     <string name="rss_source">Nguồn RSS</string>
     <string name="rss_source_edit">Sửa nguồn RSS</string>
     <string name="screen">Bộ lọc</string>
-    <string name="screen_find">Tìm kiếm nguồn Khám phá</string>
+    <string name="screen_find">Search Discovery sources</string>
     <string name="dur_pos">Vị trí hiện tại：</string>
     <string name="precision_search">Tìm kiếm chính xác</string>
     <string name="service_starting">Đang khởi động dịch vụ</string>
@@ -1178,7 +1179,7 @@
     <string name="read_aloud_read_phone_state_permission_rationale">Đọc cần đọc trạng thái điện thoại để thực hiện chức năng tạm dừng đọc trong khi gọi</string>
     <string name="read_aloud_by_media_button_title">Nút tai nghe bắt đầu đọc</string>
     <string name="read_aloud_by_media_button_summary">Bắt đầu đọc bằng nút tai nghe</string>
-    <string name="show_same_source">Hiển thị nguồn sách trùng lặp</string>
+    <string name="group_sources_by_domain">按域名分组显示</string>
     <string name="theme_config">Cấu hình chủ đề</string>
     <string name="show_manga_ui">Duyệt manga</string>
     <string name="disable_manga_scale">Vô hiệu hóa thu phóng manga</string>
@@ -1212,10 +1213,11 @@
     <string name="manga_epaper">Màn hình mực</string>
     <string name="manga_epaper_stting">Cài đặt màn hình mực</string>
     <string name="manga_epaper_value">Ngưỡng</string>
-    <string name="disable_horizontal_animation">Tắt hoạt ảnh cuộn ngang</string>
+    <string name="disable_horizontal_page_snap">禁用水平翻页效果</string>
     <string name="enable_manga_gray">Bật ảnh xám</string>
     <string name="play_mode">Chế độ phát</string>
     <string name="sure_cache_book">是否确认开始缓存？</string>
     <string name="auto_check_new_backup_t">自动检查新备份</string>
     <string name="auto_check_new_backup_s">打开软件时检查是否有新备份，有新备份时提示是否更新</string>
+    <string name="sys_image_picker">系统图片选择器</string>
 </resources>
