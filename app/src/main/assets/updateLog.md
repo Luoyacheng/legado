@@ -1,7 +1,7 @@
 [实时详细日志查看](https://gitee.com/lyc486/legado/commits/main)
 # 更新日志
 
-## cronet版本: 128.0.6613.40
+## cronet版本: 144.0.7559.90
 
 **2026/01/13**
 - 软件自定义背景图支持.9.png格式
