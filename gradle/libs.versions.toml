@@ -74,7 +74,7 @@ room = "2.7.1"
 #noinspection GradleDependency
 recyclerview = "1.4.0"
 #noinspection GradleDependency
-viewpager2 = "1.0.0"
+viewpager2 = "1.1.0"
 #noinspection GradleDependency
 firebaseBom = "33.2.0"
 
