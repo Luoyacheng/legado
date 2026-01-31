@@ -2,7 +2,7 @@
 欢迎关注公众号[阅读Plus]即时了解软件更新资讯  
 <img src="https://open.weixin.qq.com/qr/code?username=legado_plus" width="300">
 
-## cronet版本: 128.0.6613.40
+## cronet版本: 144.0.7559.90
 
 **2026/01/28**
 - 新增java.reLoginView()函数，刷新登录界面
