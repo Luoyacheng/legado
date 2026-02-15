@@ -89,9 +89,11 @@ object WebViewPool {
             clearMatches() //清除查找匹配项
             clearDisappearingChildren() //清除消失中的子视图
             clearAnimation() //清除动画
+            pooledWebView.upContext(appCtx)
             webViewClient = object: WebViewClient() {
                 @SuppressLint("SetJavaScriptEnabled")
                 override fun onPageFinished(view: WebView?, url: String?) {
+                    if (url != BLANK_HTML) return
                     view?.let{ webview ->
                         webview.settings.apply {
                             javaScriptEnabled = false
@@ -105,7 +107,6 @@ object WebViewPool {
                         webview.pauseTimers()
                         webview.onPause()
                     }
-                    pooledWebView.upContext(appCtx)
                     pooledWebView.isInUse = false
                     if (idlePool.size < CACHED_WEB_VIEW_MAX_NUM - inUsePool.size) {
                         pooledWebView.lastUseTime = System.currentTimeMillis()
