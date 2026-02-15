@@ -2,13 +2,12 @@
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <io.legado.app.lib.prefs.NameListPreference
-        android:visibility="gone"
+    /*<io.legado.app.lib.prefs.NameListPreference
         android:defaultValue="auto"
         android:key="language"
         android:title="@string/language"
         app:entries="@array/language"
-        app:entryValues="@array/language_value" />
+        app:entryValues="@array/language_value" />*/
 
     <io.legado.app.lib.prefs.PreferenceCategory
         android:title="@string/main_activity"
