@@ -28,6 +28,7 @@ import io.legado.app.ui.widget.dialog.WaitDialog
 import io.legado.app.utils.GSON
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.fromJsonObject
+import io.legado.app.utils.gone
 import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
