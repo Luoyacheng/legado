@@ -1,0 +1,6 @@
+- name: Find GMS Dependencies
+  run: |
+    ./gradlew app:dependencies --configuration releaseRuntimeClasspath > deps.txt
+    echo "=== 所有包含 google/firebase/gms/play-services 的依赖 ==="
+    cat deps.txt | grep -i "com\.google\|firebase\|play-services" | head -50
+    cat deps.txt | grep -B5 -A2 "play-services\|firebase" | head -100
