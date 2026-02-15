@@ -69,23 +69,9 @@ object WebViewPool {
             return
         }
         // 重置WebView状态
-        resetWebView(pooledWebView.realWebView)
-        pooledWebView.upContext(appCtx)
-        pooledWebView.isInUse = false
-        if (idlePool.size < CACHED_WEB_VIEW_MAX_NUM - inUsePool.size) {
-            pooledWebView.lastUseTime = System.currentTimeMillis()
-            idlePool.push(pooledWebView)
-        } else {
-            // 池子已满，直接销毁
-            pooledWebView.realWebView.destroy()
-        }
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun resetWebView(webView: WebView) = with(webView) {
-        try {
-            (parent as? ViewGroup)?.removeView(webView)
-            webView.layoutParams = ViewGroup.LayoutParams(
+        pooledWebView.realWebView.run {
+            (parent as? ViewGroup)?.removeView(this)
+            layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
@@ -99,31 +85,38 @@ object WebViewPool {
             outlineProvider = null
             clipToOutline = false
             webChromeClient = null
-            webViewClient = WebViewClient()
-
-//            webView.clearCache(true) //清除缓存
-//            webView.clearHistory() //清除历史记录
             clearFormData() //清除表单数据
             clearMatches() //清除查找匹配项
-//            webView.clearSslPreferences() //清除SSL首选项
-//            clearDisappearingChildren() //清除消失中的子视图
+            clearDisappearingChildren() //清除消失中的子视图
             clearAnimation() //清除动画
-//            removeJavascriptInterface(nameBasic)
-//            removeJavascriptInterface(nameJava)
-//            removeJavascriptInterface(nameSource)
-//            removeJavascriptInterface(nameCache) //无意义的效果
-            settings.apply {
-                javaScriptEnabled = false
-                javaScriptEnabled = true // 禁用再启用来重置js环境，注意需要禁用的订阅源需要再次执行
-                blockNetworkImage = false // 确保允许加载网络图片
-                cacheMode = WebSettings.LOAD_DEFAULT // 重置缓存模式
-                useWideViewPort = false // 恢复默认关闭宽视模式
-                loadWithOverviewMode = false // 恢复默认
-                textZoom = 100
+            webViewClient = object: WebViewClient() {
+                @SuppressLint("SetJavaScriptEnabled")
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    view?.let{ webview ->
+                        webview.settings.apply {
+                            javaScriptEnabled = false
+                            javaScriptEnabled = true // 禁用再启用来重置js环境，注意需要禁用的订阅源需要再次执行
+                            blockNetworkImage = false // 确保允许加载网络图片
+                            cacheMode = WebSettings.LOAD_DEFAULT // 重置缓存模式
+                            useWideViewPort = false // 恢复默认关闭宽视模式
+                            loadWithOverviewMode = false // 恢复默认
+                            textZoom = 100
+                        }
+                        webview.pauseTimers()
+                        webview.onPause()
+                    }
+                    pooledWebView.upContext(appCtx)
+                    pooledWebView.isInUse = false
+                    if (idlePool.size < CACHED_WEB_VIEW_MAX_NUM - inUsePool.size) {
+                        pooledWebView.lastUseTime = System.currentTimeMillis()
+                        idlePool.push(pooledWebView)
+                    } else {
+                        // 池子已满，直接销毁
+                        pooledWebView.realWebView.destroy()
+                    }
+                }
             }
             loadUrl(BLANK_HTML)
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
