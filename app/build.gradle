@@ -4,14 +4,14 @@ plugins {
 //    id 'kotlin-parcelize'
 //    //id 'kotlin-kapt'
 //    id 'com.google.devtools.ksp'
-//    id "com.google.gms.google-services"
+//    //id "com.google.gms.google-services"
 
     alias libs.plugins.android.application
     alias libs.plugins.kotlin.android
     alias libs.plugins.kotlin.parcelize
     alias libs.plugins.room
     alias libs.plugins.ksp
-    alias libs.plugins.google.services
+//    alias libs.plugins.google.services
 }
 apply from: 'download.gradle'
 
@@ -31,7 +31,10 @@ android {
             languageVersion.set(JavaLanguageVersion.of(17))
         }
     }
-
+    configurations.all {
+        exclude group: 'com.google.android.gms'
+        exclude group: 'com.google.firebase'
+    }
     signingConfigs {
         if (project.hasProperty("RELEASE_STORE_FILE")) {
             myConfig {
@@ -291,9 +294,9 @@ dependencies {
     implementation(libs.hutool.crypto)
 
     //firebase, 崩溃统计和性能统计
-    implementation platform(libs.firebase.bom)
-    implementation libs.firebase.analytics
-    implementation libs.firebase.perf
+    //implementation platform(libs.firebase.bom)
+    //implementation libs.firebase.analytics
+    //implementation libs.firebase.perf
 
     implementation libs.glide.recyclerview
 
