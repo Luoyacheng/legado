@@ -145,7 +145,7 @@ class ExploreAdapter(context: Context, val callBack: CallBack) :
             val sourceJsExtensions by lazy {
                 SourceLoginJsExtensions(context as? AppCompatActivity, source,
                     callback = object : SourceLoginJsExtensions.Callback {
-                        override fun upUiData(data: Map<String, String?>?) {
+                        override fun upUiData(data: Map<String, Any?>?) {
                         }
 
                         override fun reUiView(deltaUp: Boolean) {

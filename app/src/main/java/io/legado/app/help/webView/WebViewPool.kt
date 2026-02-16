@@ -90,6 +90,11 @@ object WebViewPool {
             clearDisappearingChildren() //清除消失中的子视图
             clearAnimation() //清除动画
             pooledWebView.upContext(appCtx)
+            if (idlePool.size >= CACHED_WEB_VIEW_MAX_NUM - inUsePool.size) {
+                // 池子已满，直接销毁
+                pooledWebView.realWebView.destroy()
+                return
+            }
             webViewClient = object: WebViewClient() {
                 @SuppressLint("SetJavaScriptEnabled")
                 override fun onPageFinished(view: WebView?, url: String?) {
@@ -108,13 +113,8 @@ object WebViewPool {
                         webview.onPause()
                     }
                     pooledWebView.isInUse = false
-                    if (idlePool.size < CACHED_WEB_VIEW_MAX_NUM - inUsePool.size) {
-                        pooledWebView.lastUseTime = System.currentTimeMillis()
-                        idlePool.push(pooledWebView)
-                    } else {
-                        // 池子已满，直接销毁
-                        pooledWebView.realWebView.destroy()
-                    }
+                    pooledWebView.lastUseTime = System.currentTimeMillis()
+                    idlePool.push(pooledWebView)
                 }
             }
             loadUrl(BLANK_HTML)

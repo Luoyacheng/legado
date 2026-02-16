@@ -85,9 +85,13 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true),
         buildMainHandler()
     }
 
-    override fun upUiData(data: Map<String, String?>?) {
-        activity?.runOnUiThread { // 在主线程中更新 UI
-            handleUpUiData(data)
+    override fun upUiData(data: Map<String, Any?>?) {
+        try {
+            activity?.runOnUiThread { // 在主线程中更新 UI
+                handleUpUiData(data)
+            }
+        } catch (e: Exception) {
+            AppLog.put("upLoginData Error: " + e.localizedMessage, e)
         }
     }
 
@@ -123,7 +127,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true),
     }
 
     @SuppressLint("SetTextI18n")
-    private fun handleUpUiData(data: Map<String, String?>?) {
+    private fun handleUpUiData(data: Map<String, Any?>?) {
         hasChange = true
         if (data == null) {
             val newLoginInfo: MutableMap<String, String> = mutableMapOf()
@@ -169,6 +173,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true),
         }
         val loginInfo = viewModel.loginInfo
         data.forEach { (key, value) ->
+            val value = value?.toString()
             val index = rowUiName.indexOf(key)
             if (index != -1) {
                 val rowUi = rowUis?.getOrNull(index) ?: return@forEach

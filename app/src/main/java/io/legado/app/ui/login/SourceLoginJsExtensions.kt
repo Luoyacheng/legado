@@ -36,11 +36,11 @@ class SourceLoginJsExtensions(
 ) : RssJsExtensions(activity, source) {
     private val callbackRef: WeakReference<Callback> = WeakReference(callback)
     interface Callback {
-        fun upUiData(data: Map<String, String?>?)
+        fun upUiData(data: Map<String, Any?>?)
         fun reUiView(deltaUp: Boolean = false)
     }
 
-    fun upLoginData(data: Map<String, String?>?) {
+    fun upLoginData(data: Map<String, Any?>?) {
         callbackRef.get()?.upUiData(data)
     }
 
