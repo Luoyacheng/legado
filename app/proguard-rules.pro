@@ -20,20 +20,12 @@
 # ================================================
 # 保留字节码属性（调试信息、注解、泛型等）
 # ================================================
-# 保留行号
-# -keepattributes LineNumberTable
 
-# 保留所有注解及内部类信息
--keepattributes *Annotation*, InnerClasses
-
-# 保留泛型签名（使 gson、反射等能正确处理泛型类型）
-# -keepattributes Signature
+# 保留必要属性
+-keepattributes *Annotation*, InnerClasses, Signature, LineNumberTable
 
 # 隐藏SourceFile信息
-# -renamesourcefileattribute SourceFile
-
-# 保留所有信息除了SourceFile
- -keepattributes !SourceFile
+ -renamesourcefileattribute SourceFile
 
 # ================================================
 # 移除对Log类方法的调用，删除调试日志
