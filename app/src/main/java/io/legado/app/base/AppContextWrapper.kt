@@ -25,7 +25,7 @@ object AppContextWrapper {
         var fontScale = context.getPrefInt(PreferKey.fontScale) / 10f
         if (fontScale !in 0.8f..1.6f) {
             fontScale = sysConfiguration.fontScale
-        };
+        }
         return fontScale
     }
 
