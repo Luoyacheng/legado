@@ -161,28 +161,13 @@ object WebCacheManager {
     fun put(key: String, value: String, saveTime: Int = 0) {
         CacheManager.put(key, value, saveTime)
     }
-    @JvmOverloads
-    @JavascriptInterface
-    fun put(key: String, value: Int, saveTime: Int = 0) {
-        CacheManager.put(key, value, saveTime)
-    }
     @JavascriptInterface
     fun putMemory(key: String, value: String) {
         memoryLruCache.put(key, value)
     }
     @JavascriptInterface
-    fun putMemory(key: String, value: Int) {
-        memoryLruCache.put(key, value)
-    }
-    @JavascriptInterface
     fun getFromMemory(key: String): String? {
-        return memoryLruCache[key]?.let {
-            when (it) {
-                is String -> it
-                is Int -> it.toString()
-                else -> null
-            }
-        }
+        return memoryLruCache[key]?.toString()
     }
     @JavascriptInterface
     fun deleteMemory(key: String) {
