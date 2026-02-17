@@ -97,10 +97,10 @@ import io.legado.app.help.webView.WebViewPool.BLANK_HTML
 import io.legado.app.help.webView.WebViewPool.DATA_HTML
 import io.legado.app.model.Download
 import kotlinx.coroutines.Dispatchers.IO
-import splitties.init.appCtx
 import java.lang.ref.WeakReference
 import splitties.systemservices.powerManager
 import java.net.URLDecoder
+import androidx.core.graphics.createBitmap
 
 /**
  * rss阅读界面
@@ -557,6 +557,9 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     }
 
     inner class CustomWebChromeClient : WebChromeClient() {
+        override fun getDefaultVideoPoster(): Bitmap {
+            return super.getDefaultVideoPoster() ?: createBitmap(100, 100)
+        }
 
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             super.onProgressChanged(view, newProgress)

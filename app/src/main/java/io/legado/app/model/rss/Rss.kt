@@ -44,6 +44,7 @@ object Rss {
             sortUrl,
             page = page,
             key = key,
+            baseUrl = rssSource.sourceUrl,
             source = rssSource,
             ruleData = ruleData,
             coroutineContext = currentCoroutineContext(),
@@ -75,6 +76,7 @@ object Rss {
             }
         }
         checkRedirect(rssSource, res)
+        Debug.log(rssSource.sourceUrl, "≡获取成功:${analyzeUrl.ruleUrl}")
         return RssParserByRule.parseXML(sortName, sortUrl, res.url, res.body, rssSource, ruleData)
     }
 

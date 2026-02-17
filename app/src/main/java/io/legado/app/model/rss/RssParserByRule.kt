@@ -34,7 +34,6 @@ object RssParserByRule {
                 appCtx.getString(R.string.error_get_web_content, rssSource.sourceUrl)
             )
         }
-//        Debug.log(sourceUrl, "≡获取成功:$sortUrl") //补上登录检测后todo
         Debug.log(sourceUrl, body, state = 10)
         var ruleArticles = rssSource.ruleArticles
         if (ruleArticles.isNullOrBlank()) {
@@ -120,10 +119,18 @@ object RssParserByRule {
             Debug.log(sourceUrl, "└${rssArticle.description}", log)
         }
         Debug.log(sourceUrl, "┌获取图片url", log)
-        rssArticle.image = analyzeRule.getString(ruleImage, isUrl = true)
-        Debug.log(sourceUrl, "└${rssArticle.image}", log)
+        try {
+            analyzeRule.getString(ruleImage).let {
+                if (it.isNotEmpty()) {
+                    rssArticle.image = NetworkUtils.getAbsoluteURL(sourceUrl, it)
+                }
+            }
+            Debug.log(sourceUrl, "└${rssArticle.image ?: ""}", log)
+        } catch (e: Exception) {
+            Debug.log(sourceUrl, "└${e.localizedMessage}", log)
+        }
         Debug.log(sourceUrl, "┌获取文章链接", log)
-        rssArticle.link = NetworkUtils.getAbsoluteURL(sourceUrl, analyzeRule.getString(ruleLink))
+        rssArticle.link = analyzeRule.getString(ruleLink, isUrl = true)
         Debug.log(sourceUrl, "└${rssArticle.link}", log)
         rssArticle.type = type
         if (rssArticle.title.isBlank()) {

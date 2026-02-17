@@ -106,7 +106,7 @@ data class GiteeAsset(
         val appVariant = when {
             name.contains("releaseA") -> AppVariant.BETA_RELEASEA
             name.contains("releaseS") -> AppVariant.BETA_RELEASES
-            preRelease && name.contains("release") -> AppVariant.BETA_RELEASE
+            name.contains("release") -> AppVariant.BETA_RELEASE //preRelease &&
             else -> AppVariant.OFFICIAL
         }
 

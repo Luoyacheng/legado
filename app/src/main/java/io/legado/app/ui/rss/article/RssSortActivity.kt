@@ -343,9 +343,10 @@ class RssSortActivity : VMBaseActivity<ActivityRssArtivlesBinding, RssSortViewMo
             val source = viewModel.rssSource ?: return@launch
             if (viewModel.searchKey != null) {
                 sortList.apply {
-                    val urls = listOf(Pair("搜索", NetworkUtils.getAbsoluteURL(source.sourceUrl, source.searchUrl!!)))
+                    val name = "搜索"
+                    val url = source.searchUrl ?: return@apply
                     clear()
-                    addAll(urls)
+                    add(Pair(name, url))
                 }
                 upFragmentsView()
                 return@launch

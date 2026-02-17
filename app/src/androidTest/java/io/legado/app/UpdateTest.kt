@@ -17,12 +17,12 @@ class UpdateTest {
         "https://gitee.com/api/v5/repos/lyc486/legado/releases?page=1&per_page=3&direction=desc"
 
     private val lastBetaReleaseUrl =
-        "https://gitee.com/api/v5/repos/lyc486/legado/releases/tags/beta"
+        "https://gitee.com/api/v5/repos/lyc486/legado/releases/latest"
 
     @Test
     fun updateApp_beta() {
         val body = okHttpClient.newCall(Request.Builder().url(lastBetaReleaseUrl).build()).execute()
-            .body!!.string()
+            .body.string()
 
         val releaseList = Gson().fromJsonObject<GiteeRelease>(body)
             .getOrElse {
@@ -39,7 +39,7 @@ class UpdateTest {
     @Test
     fun updateApp() {
         val body = okHttpClient.newCall(Request.Builder().url(lastReleaseUrl).build()).execute()
-            .body!!.string()
+            .body.string()
 
         val releaseList = GSON.fromJsonArray<GiteeRelease>(body)
             .getOrElse {

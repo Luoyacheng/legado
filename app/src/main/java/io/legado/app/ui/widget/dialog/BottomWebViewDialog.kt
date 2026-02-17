@@ -90,6 +90,7 @@ import java.io.ByteArrayInputStream
 import java.lang.ref.WeakReference
 import java.net.URLDecoder
 import java.util.Date
+import androidx.core.graphics.createBitmap
 
 class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view), WebJsExtensions.Callback {
 
@@ -711,6 +712,9 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
     )
 
     inner class CustomWebChromeClient : WebChromeClient() {
+        override fun getDefaultVideoPoster(): Bitmap {
+            return super.getDefaultVideoPoster() ?: createBitmap(100, 100)
+        }
 
         override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
             originOrientation = activity?.requestedOrientation //先记录原始方向，避免被js控制的影响

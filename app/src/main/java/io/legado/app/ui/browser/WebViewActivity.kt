@@ -61,6 +61,7 @@ import io.legado.app.model.Download
 import splitties.systemservices.powerManager
 import java.lang.ref.WeakReference
 import java.net.URLDecoder
+import androidx.core.graphics.createBitmap
 
 class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
     companion object {
@@ -372,6 +373,9 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
     }
 
     inner class CustomWebChromeClient : WebChromeClient() {
+        override fun getDefaultVideoPoster(): Bitmap {
+            return super.getDefaultVideoPoster() ?: createBitmap(100, 100)
+        }
 
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             super.onProgressChanged(view, newProgress)

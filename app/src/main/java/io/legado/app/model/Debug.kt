@@ -147,7 +147,7 @@ object Debug {
             key.contains("::") -> {
                 val name = key.substringBefore("::")
                 val url = key.substringAfter("::")
-                log(rssSource.sourceUrl, "⇒开始访问分类页:$url")
+                log(debugSource, "⇒开始访问分类页:$url")
                 log(debugSource, "︾开始解析分类页")
                 sortDebug(scope, rssSource, name, url)
             }
@@ -161,7 +161,7 @@ object Debug {
                         val rssArticle = RssArticle()
                         rssArticle.origin = rssSource.sourceUrl
                         rssArticle.link = key
-                        log(rssSource.sourceUrl, "⇒开始访问内容页:$key")
+                        log(debugSource, "⇒开始访问内容页:$key")
                         rssContentDebug(scope, rssArticle, ruleContent, rssSource)
                     }
                 } else {
@@ -176,9 +176,9 @@ object Debug {
                     log(debugSource, "⇒搜索URL为空", state = -1)
                     return
                 }
-                log(rssSource.sourceUrl, "⇒开始搜索关键字:$key")
+                log(debugSource, "⇒开始搜索关键字:$key")
                 log(debugSource, "︾开始解析搜索页")
-                sortDebug(scope, rssSource, "搜索", NetworkUtils.getAbsoluteURL(rssSource.sourceUrl, searchUrl), key)
+                sortDebug(scope, rssSource, "搜索", searchUrl, key)
             }
         }
     }
@@ -236,13 +236,13 @@ object Debug {
                 val book = Book()
                 book.origin = bookSource.bookSourceUrl
                 book.bookUrl = key
-                log(bookSource.bookSourceUrl, "⇒开始访问详情页:$key")
+                log(debugSource, "⇒开始访问详情页:$key")
                 infoDebug(scope, bookSource, book)
             }
 
             key.contains("::") -> {
                 val url = key.substringAfter("::")
-                log(bookSource.bookSourceUrl, "⇒开始访问发现页:$url")
+                log(debugSource, "⇒开始访问发现页:$url")
                 exploreDebug(scope, bookSource, url)
             }
 
@@ -251,7 +251,7 @@ object Debug {
                 val book = Book()
                 book.origin = bookSource.bookSourceUrl
                 book.tocUrl = url
-                log(bookSource.bookSourceUrl, "⇒开始访目录页:$url")
+                log(debugSource, "⇒开始访目录页:$url")
                 tocDebug(scope, bookSource, book)
             }
 
@@ -259,7 +259,7 @@ object Debug {
                 val url = key.substring(2)
                 val book = Book()
                 book.origin = bookSource.bookSourceUrl
-                log(bookSource.bookSourceUrl, "⇒开始访正文页:$url")
+                log(debugSource, "⇒开始访正文页:$url")
                 val chapter = BookChapter()
                 chapter.title = "调试"
                 chapter.url = url
@@ -267,7 +267,7 @@ object Debug {
             }
 
             else -> {
-                log(bookSource.bookSourceUrl, "⇒开始搜索关键字:$key")
+                log(debugSource, "⇒开始搜索关键字:$key")
                 searchDebug(scope, bookSource, key)
             }
         }

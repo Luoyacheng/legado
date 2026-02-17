@@ -736,11 +736,10 @@ class AnalyzeRule(
                                     infoVal.insert(0, it)
                                 }
                             } else {
-                                val jsEval: Any? = evalJS(ruleParam[index], result)
-                                when {
-                                    jsEval == null -> Unit
-                                    jsEval is String -> infoVal.insert(0, jsEval)
-                                    jsEval is Double && jsEval % 1.0 == 0.0 -> infoVal.insert(
+                                when (val jsEval: Any? = evalJS(ruleParam[index], result)) {
+                                    null -> Unit
+                                    is String -> infoVal.insert(0, jsEval)
+                                    is Double if jsEval % 1.0 == 0.0 -> infoVal.insert(
                                         0,
                                         String.format(Locale.ROOT, "%.0f", jsEval)
                                     )
