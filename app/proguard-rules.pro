@@ -21,11 +21,7 @@
 # 保留字节码属性（调试信息、注解、泛型等）
 # ================================================
 
-# 保留必要属性
 -keepattributes *Annotation*, InnerClasses, Signature, LineNumberTable
-
-# 隐藏SourceFile信息
- -renamesourcefileattribute SourceFile
 
 # ================================================
 # 移除对Log类方法的调用，删除调试日志
@@ -128,5 +124,6 @@
 # ================================================
 # JSpecify 注解
 -dontwarn org.jspecify.annotations.NullMarked
+
 # Markdown 扩展（删除线）
 -dontwarn org.commonmark.ext.gfm.**
