@@ -58,7 +58,7 @@
 # JsonPath
 -keep class com.jayway.jsonpath.* { *; }
 
-# Jsoup
+# ---------- Jsoup ----------
 -keep class org.jsoup.** { *; }
 
 # ---------- Sora Editor ----------
@@ -108,10 +108,6 @@
 -keep class androidx.documentfile.provider.TreeDocumentFile {
     <init>(...);
 }
-
-## ExoPlayer
--keepclassmembers class androidx.media3.datasource.cache.CacheDataSource$Factory {
-    *** upstreamDataSourceFactory;
 
 # LiveEventBus
 -keepclassmembers class androidx.lifecycle.LiveData {
