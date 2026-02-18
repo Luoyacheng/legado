@@ -61,11 +61,6 @@
 # Jsoup
 -keep class org.jsoup.** { *; }
 
-# ---------- JsoupXpath ----------
--keep class * implements org.seimicrawler.xpath.core.AxisSelector{*;}
--keep class * implements org.seimicrawler.xpath.core.NodeTest{*;}
--keep class * implements org.seimicrawler.xpath.core.Function{*;}
-
 # ---------- Sora Editor ----------
 # TM4E（语法高亮）
 -keep class org.eclipse.tm4e.** { *; }
