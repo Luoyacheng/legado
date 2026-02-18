@@ -58,8 +58,13 @@
 # JsonPath
 -keep class com.jayway.jsonpath.* { *; }
 
-# ---------- Jsoup ----------
+# Jsoup
 -keep class org.jsoup.** { *; }
+
+# ---------- JsoupXpath ----------
+-keep class * implements org.seimicrawler.xpath.core.AxisSelector{*;}
+-keep class * implements org.seimicrawler.xpath.core.NodeTest{*;}
+-keep class * implements org.seimicrawler.xpath.core.Function{*;}
 
 # ---------- Sora Editor ----------
 # TM4E（语法高亮）
@@ -108,6 +113,10 @@
 -keep class androidx.documentfile.provider.TreeDocumentFile {
     <init>(...);
 }
+
+## ExoPlayer
+-keepclassmembers class androidx.media3.datasource.cache.CacheDataSource$Factory {
+    *** upstreamDataSourceFactory;
 
 # LiveEventBus
 -keepclassmembers class androidx.lifecycle.LiveData {
