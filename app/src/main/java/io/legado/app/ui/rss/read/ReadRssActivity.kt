@@ -503,7 +503,6 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
         super.onPause()
         if (powerManager.isInteractive) {
             wasScreenOff = false
-            currentWebView.pauseTimers()
             currentWebView.onPause()
         } else {
             wasScreenOff = true
@@ -513,7 +512,6 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     override fun onResume() {
         super.onResume()
         if (!wasScreenOff) {
-            currentWebView.resumeTimers()
             currentWebView.onResume()
         }
     }

@@ -52,7 +52,10 @@ object WebViewPool {
                 needInitialize = false
                 startCleanupTimer()
             }
-            createNewWebView().upContext(context) // 创建新实例
+            createNewWebView(context) // 创建新实例
+        }
+        if (inUsePool.isEmpty()) {
+            pooledWebView.realWebView.resumeTimers()
         }
         pooledWebView.let {
             it.isInUse = true
@@ -109,7 +112,9 @@ object WebViewPool {
                             loadWithOverviewMode = false // 恢复默认
                             textZoom = 100
                         }
-                        webview.pauseTimers()
+                        if (inUsePool.isEmpty()) {
+                            webview.pauseTimers()
+                        }
                         webview.onPause()
                     }
                     pooledWebView.isInUse = false
@@ -121,8 +126,8 @@ object WebViewPool {
         }
     }
 
-    private fun createNewWebView(): PooledWebView {
-        val webView = VisibleWebView(MutableContextWrapper(appCtx))
+    private fun createNewWebView(context: Context = appCtx): PooledWebView {
+        val webView = VisibleWebView(MutableContextWrapper(context))
         preInitWebView(webView)
         return PooledWebView(webView, generateId())
     }
