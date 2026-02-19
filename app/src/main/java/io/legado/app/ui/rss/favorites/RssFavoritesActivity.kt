@@ -46,14 +46,14 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
     override fun onResume() {
         super.onResume()
         //从ReadRssActivity退出时，判断是否需要重新定位tabLayout选中项
-        if (currentGroup.isNotEmpty() && groupList.isNotEmpty()){
+        if (currentGroup.isNotEmpty() && groupList.isNotEmpty()) {
             var item = groupList.indexOf(currentGroup)
             val currentItem = binding.viewPager.currentItem
             //如果坐标没有变化，则结束
-            if(item == currentItem){
+            if (item == currentItem) {
                 return
             }
-            if (item == -1){
+            if (item == -1) {
                 item = currentItem
             }
             lifecycleScope.launch {
@@ -131,10 +131,15 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
     }
 
     private fun deleteGroup() {
+        if (groupList.isEmpty()) {
+            return
+        }
         alert(R.string.draw) {
             val item = binding.viewPager.currentItem
             val group = groupList[item]
-            setMessage(getString(R.string.sure_del) + "\n<" + group + ">" + getString(R.string.group))
+            setMessage(
+                getString(R.string.sure_del) + "\n<" + group + ">" + getString(R.string.group)
+            )
             noButton()
             yesButton {
                 appDb.rssStarDao.deleteByGroup(group)
@@ -144,7 +149,10 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
 
     private fun deleteAll() {
         alert(R.string.draw) {
-            setMessage(getString(R.string.sure_del) + "\n<" + getString(R.string.all) + ">" + getString(R.string.favorite))
+            setMessage(
+                getString(R.string.sure_del) + "\n<" + getString(R.string.all) + ">"
+                        + getString(R.string.favorite)
+            )
             noButton()
             yesButton {
                 appDb.rssStarDao.deleteAll()
