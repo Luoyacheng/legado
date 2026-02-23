@@ -351,7 +351,7 @@ class RssSortActivity : VMBaseActivity<ActivityRssArtivlesBinding, RssSortViewMo
                 upFragmentsView()
                 return@launch
             }
-            viewModel.sortUrl?.let { url ->
+            viewModel.sortUrl?.takeIf { it.isNotBlank() }?.let { url ->
                 val urls: List<Pair<String, String>> = try {
                     if (url.isJsonObject()) {
                         GSONStrict.fromJsonObject<Map<String, String>>(url)

@@ -1,5 +1,6 @@
 package io.legado.app.ui.book.audio
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.view.LayoutInflater
@@ -71,6 +72,7 @@ class SliderPopup(private val context: Context, private val name: Int) :
         binding.tvSeekValue.text = context.getString(R.string.timer_m, process)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setProcessSpeedText(speed: Float) {
         binding.tvSeekValue.text = "%.1fX".format(speed)
     }
