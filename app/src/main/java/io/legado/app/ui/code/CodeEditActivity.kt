@@ -17,6 +17,7 @@ import com.google.android.material.textfield.TextInputEditText
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.event.SelectionChangeEvent
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
+import io.github.rosemoe.sora.util.regex.RegexBackrefGrammar
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.EditorSearcher
 import io.github.rosemoe.sora.widget.EditorSearcher.SearchOptions
@@ -55,7 +56,7 @@ class CodeEditActivity :
     }
     private val editor: CodeEditor by lazy { binding.editText }
     private val editorSearcher: EditorSearcher by lazy { editor.searcher }
-    private lateinit var options: SearchOptions
+    private var searchOptions: SearchOptions? = null
     private var menuSaveBtn: MenuItem? = null
 
     private val isDark
@@ -194,14 +195,22 @@ class CodeEditActivity :
         return super.onPrepareOptionsMenu(menu)
     }
 
+    private fun setSearchOptions() {
+        searchOptions =  SearchOptions(
+            if (isRegex) SearchOptions.TYPE_REGULAR_EXPRESSION else SearchOptions.TYPE_NORMAL,
+            !isRegex,
+            RegexBackrefGrammar.DEFAULT
+        )
+    }
+
     private fun search() {
         if (binding.searchGroup.isVisible) return
         binding.switchRegex.run {
             isChecked = isRegex
-            options =  SearchOptions(!isRegex, isRegex)
+            setSearchOptions()
             setOnCheckedChangeListener { _, isChecked ->
                 isRegex = isChecked
-                options =  SearchOptions(!isRegex, isRegex)
+                setSearchOptions()
                 searchTxt(binding.etFind.text.toString())
             }
         }
@@ -284,7 +293,9 @@ class CodeEditActivity :
     private fun searchTxt(txt: String) {
         if (txt.isNotEmpty()) {
             try {
-                editorSearcher.search(txt, options)
+                searchOptions?.let {
+                    editorSearcher.search(txt, it)
+                }
             } catch (_: java.util.regex.PatternSyntaxException) {
                 // 忽略正则表达式语法错误
                 editorSearcher.stopSearch()
