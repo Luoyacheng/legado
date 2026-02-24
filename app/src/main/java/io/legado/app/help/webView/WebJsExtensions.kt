@@ -391,12 +391,13 @@ class WebJsExtensions(
                 });
             };
             window.$JSBridgeResult = function(id, success) {
-                if (JSBridgeCallbacks[id]) {
+                const callBack = JSBridgeCallbacks[id];
+                if (callBack) {
                     const result = cache.getFromMemory(id);
                     if (success) {
-                        JSBridgeCallbacks[id].resolve(result);
+                        callBack.resolve(result);
                     } else {
-                        JSBridgeCallbacks[id].reject(result);
+                        callBack.reject(result);
                     }
                     delete JSBridgeCallbacks[id];
                 }
@@ -418,12 +419,13 @@ class WebJsExtensions(
                 });
             };
             window.$JSBridgeResult = function(id, success) {
-                if (JSBridgeCallbacks[id]) {
+                const callBack = JSBridgeCallbacks[id];
+                if (callBack) {
                     const result = cache.getFromMemory(id);
                     if (success) {
-                        JSBridgeCallbacks[id].resolve(result);
+                        callBack.resolve(result);
                     } else {
-                        JSBridgeCallbacks[id].reject(result);
+                        callBack.reject(result);
                     }
                     delete JSBridgeCallbacks[id];
                 }

@@ -440,6 +440,7 @@ jobs:
           RELEASE_CREATED=false
           RELEASE_ID=""
           while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ -z "$RELEASE_ID" ]; do
+            set +e
             RELEASE_JSON=$(curl -sX POST \
               -H "Content-Type: application/json" \
               -H "$AUTH_HEADER" \
@@ -451,8 +452,10 @@ jobs:
                 "prerelease": '"$PRERELEASE"'
               }' \
               "$API_BASE/releases")
+            CURL_EXIT=$?
+            set -e
 
-            if [ $? -eq 0 ] && [ -n "$RELEASE_JSON" ]; then
+            if [ CURL_EXIT -eq 0 ] && [ -n "$RELEASE_JSON" ]; then
               RELEASE_ID=$(echo "$RELEASE_JSON" | jq -r '.id // empty')
               RELEASE_CREATED=true
             else
@@ -468,11 +471,18 @@ jobs:
           fi
           # 上传所有APK文件
           for APK_FILE in apk/*.apk; do
-            curl -sX POST \
+            set +e
+            curl -sS --fail --tlsv1.2 --retry 2 --retry-delay 3 --connect-timeout 10 -X POST \
               -H "$AUTH_HEADER" \
               -F "file=@$APK_FILE" \
               "$API_BASE/releases/$RELEASE_ID/attach_files"
-            echo "✅ 已上传 $APK_FILE"
+            CURL_EXIT=$?
+            set -e
+            if [ $CURL_EXIT -eq 0 ]; then
+              echo "✅ 已上传 $APK_FILE"
+            else
+              echo "❌ 上传 $APK_FILE 失败 (curl exit $CURL_EXIT)"
+            fi
           done
 
   update-storage:

@@ -62,6 +62,8 @@ import splitties.systemservices.powerManager
 import java.lang.ref.WeakReference
 import java.net.URLDecoder
 import androidx.core.graphics.createBitmap
+import io.legado.app.help.WebCacheManager
+import io.legado.app.help.webView.WebJsExtensions.Companion.nameCache
 
 class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
     companion object {
@@ -114,6 +116,7 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
                         val webJsExtensions = WebJsExtensions(it, this, currentWebView)
                         currentWebView.addJavascriptInterface(webJsExtensions, nameJava)
                     }
+                    currentWebView.addJavascriptInterface(WebCacheManager, nameCache)
                 }
                 currentWebView.loadDataWithBaseURL(url, html, "text/html", "utf-8", url)
             }
