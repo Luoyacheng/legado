@@ -425,32 +425,43 @@ class RssSortActivity : VMBaseActivity<ActivityRssArtivlesBinding, RssSortViewMo
         viewModel.rssSource?.setVariable(variable)
     }
 
-    private inner class TabFragmentPageAdapter :
-        FragmentStatePagerAdapter(supportFragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
-
-        override fun getItemPosition(`object`: Any): Int {
-            return POSITION_NONE
-        }
-
-        override fun getPageTitle(position: Int): CharSequence {
-            return sortList[position].first
-        }
-
-        override fun getItem(position: Int): Fragment {
-            val sort = sortList[position]
-            return RssArticlesFragment(sort.first, sort.second, viewModel.searchKey) //获取内容界面
-        }
-
-        override fun getCount(): Int {
-            return sortList.size
-        }
-
-        override fun instantiateItem(container: ViewGroup, position: Int): Any {
-            val fragment = super.instantiateItem(container, position) as Fragment
-            fragmentMap[sortList[position].first] = fragment
-            return fragment
-        }
-    }
+	private inner class TabFragmentPageAdapter :
+	    FragmentStatePagerAdapter(supportFragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
+	
+	    override fun getItemPosition(`object`: Any): Int {
+	        val fragment = `object` as RssArticlesFragment
+	        val sortName = fragment.arguments?.getString("sortName")
+	        val index = sortList.indexOfFirst { it.first == sortName }
+	        return if (index >= 0) index else POSITION_NONE
+	    }
+	
+	    override fun getPageTitle(position: Int): CharSequence {
+	        return sortList[position].first
+	    }
+	
+	    override fun getItem(position: Int): Fragment {
+	        val sort = sortList[position]
+	        return RssArticlesFragment(sort.first, sort.second, viewModel.searchKey)
+	    }
+	
+	    override fun getCount(): Int {
+	        return sortList.size
+	    }
+	
+	    override fun instantiateItem(container: ViewGroup, position: Int): Any {
+	        val fragment = super.instantiateItem(container, position) as Fragment
+	        fragmentMap[sortList[position].first] = fragment
+	        return fragment
+	    }
+	
+	    override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
+	        super.destroyItem(container, position, `object`)
+	        val sortName = (`object` as? RssArticlesFragment)?.arguments?.getString("sortName")
+	        if (sortName != null) {
+	            fragmentMap.remove(sortName)
+	        }
+	    }
+	}
 
     companion object {
         fun start(context: Context, sortUrl: String?, sourceUrl: String, key: String? = null) {
