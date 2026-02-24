@@ -774,9 +774,7 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
             return true
         }
 
-        private var jsInjected = false
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-            jsInjected = false
             if (needClearHistory) {
                 needClearHistory = false
                 currentWebView.clearHistory() //清除历史
@@ -792,7 +790,7 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
                     startActivity<OnLineImportActivity> {
                         data = url
                     }
-                    return true
+                    true
                 }
 
                 else -> {
@@ -811,12 +809,14 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
             handler?.proceed()
         }
 
+        private var jsInjected = false
         override fun shouldInterceptRequest(
             view: WebView, request: WebResourceRequest
         ): WebResourceResponse? {
             val url = request.url.toString()
             if (request.isForMainFrame) {
                 if (!preloadJs.isNullOrEmpty()) {
+                    jsInjected = false
                     if (url.startsWith("data:text/html;") || request.method == "POST") {
                         return super.shouldInterceptRequest(view, request)
                     }

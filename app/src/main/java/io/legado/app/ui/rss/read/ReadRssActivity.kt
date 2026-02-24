@@ -141,9 +141,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
         viewModel.rssArticle?.let {
             start(this@ReadRssActivity, it.title, it.link, it.origin)
         } ?: run {
-            viewModel.initData(intent) {
-                currentWebView.settings.cacheMode = if (viewModel.cacheFirst) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
-            }
+            viewModel.initData(intent)
         }
     }
     private val editSourceResult = registerForActivityResult(
@@ -164,9 +162,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
         initView()
         initWebView()
         initLiveData()
-        viewModel.initData(intent) {
-            currentWebView.settings.cacheMode = if (viewModel.cacheFirst) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
-        }
+        viewModel.initData(intent)
         currentWebView.clearHistory()
         onBackPressedDispatcher.addCallback(this) {
             if (binding.customWebView.size > 0) { //关闭全屏
@@ -387,49 +383,28 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     private fun initLiveData() {
         viewModel.contentLiveData.observe(this) { content ->
             viewModel.rssArticle?.let {
-                upJavaScriptEnable()
+                upWebviewSettings()
                 initJavascriptInterface()
                 val rssSource = viewModel.rssSource
-                val url = NetworkUtils.getAbsoluteURL(it.origin, it.link).substringBefore("@js")
                 val html = viewModel.clHtml(content, rssSource?.style)
-                currentWebView.settings.userAgentString =
-                    viewModel.headerMap[AppConst.UA_NAME] ?: AppConfig.userAgent
-                if (rssSource?.loadWithBaseUrl == true) {
-                    currentWebView.loadDataWithBaseURL(
-                        url,
-                        html,
-                        "text/html",
-                        "utf-8",
-                        url
-                    )//不想用baseUrl进else
-                } else {
-                    currentWebView.loadDataWithBaseURL(
-                        null,
-                        html,
-                        "text/html;charset=utf-8",
-                        "utf-8",
-                        url
-                    )
-                }
+                val url = NetworkUtils.getAbsoluteURL(it.origin, it.link).substringBefore("@js")
+                val baseUrl = if (rssSource?.loadWithBaseUrl == false) null else url
+                currentWebView.loadDataWithBaseURL(
+                    baseUrl, html, "text/html", "utf-8", url
+                )
             }
         }
         viewModel.urlLiveData.observe(this) { urlState ->
-            with(currentWebView) {
-                upJavaScriptEnable()
-                initJavascriptInterface()
-                CookieManager.applyToWebView(urlState.url)
-                settings.userAgentString = urlState.getUserAgent()
-                loadUrl(urlState.url, urlState.headerMap)
-            }
+            upWebviewSettings(urlState.getUserAgent())
+            initJavascriptInterface()
+            CookieManager.applyToWebView(urlState.url)
+            currentWebView.loadUrl(urlState.url, urlState.headerMap)
         }
         viewModel.htmlLiveData.observe(this) { html ->
             viewModel.rssSource?.let {
-                upJavaScriptEnable()
+                upWebviewSettings()
                 initJavascriptInterface()
-                currentWebView.settings.userAgentString =
-                    viewModel.headerMap[AppConst.UA_NAME] ?: AppConfig.userAgent
-                val baseUrl =
-                    if (it.loadWithBaseUrl) it.sourceUrl else null
+                val baseUrl = if (it.loadWithBaseUrl) it.sourceUrl else null
                 currentWebView.loadDataWithBaseURL(
                     baseUrl, html, "text/html", "utf-8", it.sourceUrl
                 )
@@ -438,9 +413,13 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun upJavaScriptEnable() {
-        if (viewModel.rssSource?.enableJs == false) {
-            currentWebView.settings.javaScriptEnabled = false
+    private fun upWebviewSettings(userAgent: String? = null) {
+        viewModel.rssSource?.let { s ->
+            currentWebView.settings.run {
+                userAgentString = userAgent ?: viewModel.headerMap[AppConst.UA_NAME] ?: AppConfig.userAgent
+                javaScriptEnabled = s.enableJs
+                cacheMode = if (s.cacheFirst) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
+            }
         }
     }
 
@@ -618,9 +597,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
             return shouldOverrideUrlLoading(url.toUri())
         }
 
-        private var jsInjected = false
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-            jsInjected = false
             if (needClearHistory) {
                 needClearHistory = false
                 currentWebView.clearHistory() //清除历史
@@ -629,6 +606,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
             currentWebView.evaluateJavascript(basicJs, null)
         }
 
+        private var jsInjected = false
         /**
          * 如果有黑名单,黑名单匹配返回空白,
          * 没有黑名单再判断白名单,在白名单中的才通过,
@@ -641,6 +619,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
             val source = viewModel.rssSource ?: return super.shouldInterceptRequest(view, request)
             if (request.isForMainFrame) {
                 if (viewModel.hasPreloadJs) {
+                    jsInjected = false
                     if (url.startsWith("data:text/html;") || request.method == "POST") {
                         return super.shouldInterceptRequest(view, request)
                     }
