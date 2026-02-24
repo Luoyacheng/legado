@@ -51,7 +51,7 @@ class ReadRssViewModel(application: Application) : BaseViewModel(application) {
             val origin = intent.getStringExtra("origin") ?: return@execute
             this@ReadRssViewModel.origin = origin
             val link = intent.getStringExtra("link")
-            rssSource = appDb.rssSourceDao.getByKey(origin)?.also{
+            rssSource = appDb.rssSourceDao.getByKey(origin)?.also {
                 cacheFirst = it.cacheFirst
                 hasPreloadJs = !it.preloadJs.isNullOrBlank()
             }
