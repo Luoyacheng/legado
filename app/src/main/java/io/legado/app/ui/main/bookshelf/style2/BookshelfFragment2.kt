@@ -98,31 +98,9 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
         binding.rvBookshelf.adapter = booksAdapter
         /**
          * 采用 layoutManager?.onRestoreInstanceState(layoutState)
-         * 恢复滚动位置,注释掉下方代码
+         * 恢复滚动位置
          * **/
-//        if (bookshelfLayout >= 2) {
-//            booksAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-//                override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-//                    val layoutManager = binding.rvBookshelf.layoutManager
-//                    if (positionStart == 0 && layoutManager is LinearLayoutManager) {
-//                        val scrollTo = layoutManager.findFirstVisibleItemPosition() - itemCount
-//                        if (scrollTo > 0) {
-//                        binding.rvBookshelf.scrollToPosition(max(0, scrollTo))
-//                        }
-//                    }
-//                }
-//
-//                override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-//                    val layoutManager = binding.rvBookshelf.layoutManager
-//                    if (toPosition == 0 && layoutManager is LinearLayoutManager) {
-//                        val scrollTo = layoutManager.findFirstVisibleItemPosition() - itemCount
-//                        if (scrollTo > 0) {
-//                            binding.rvBookshelf.scrollToPosition( scrollTo)
-//                        }
-//                    }
-//                }
-//            })
-//        }
+        binding.rvBookshelf.itemAnimator =  null
         binding.rvBookshelf.addItemDecoration( object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(
                 outRect: Rect,
@@ -165,7 +143,7 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
     override fun upGroup(data: List<BookGroup>) {
         if (data != bookGroups) {
             bookGroups = data
-            booksAdapter.updateItems()
+            booksAdapter.updateItems(groupId)
             itemCount = getItemCount()
             val spanCount = bookshelfLayout
             if (spanCount >= 2) {
@@ -230,7 +208,7 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
                 AppLog.put("书架更新出错", it)
             }.conflate().flowOn(Dispatchers.Default).collect { list ->
                 books = list
-                booksAdapter.updateItems()
+                booksAdapter.updateItems(groupId)
                 itemCount = getItemCount()
                 val spanCount = bookshelfLayout
                 if (spanCount >= 2) {
