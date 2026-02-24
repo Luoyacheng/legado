@@ -119,7 +119,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     private var isFullscreen = false
     private var wasScreenOff = false
     private var customWebViewCallback: WebChromeClient.CustomViewCallback? = null
-    private var isInterfaceInjected = false
+    private var interfaceInjected: String? = null
     private var needClearHistory = true
     private val selectImageDir = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
@@ -131,7 +131,6 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
 
     private val refreshNameList: MutableList<String> by lazy { mutableListOf() }
     private fun refresh() {
-        isInterfaceInjected = false
         if (viewModel.rssSource?.singleUrl == true) {
             currentWebView.reload()
             return
@@ -446,10 +445,10 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     }
 
     private fun initJavascriptInterface() {
-        if (!isInterfaceInjected) {
-            isInterfaceInjected = true
-            if (!viewModel.hasPreloadJs) return
-            viewModel.rssSource?.let {
+        viewModel.rssSource?.let {
+            if (interfaceInjected != it.sourceUrl) {
+                interfaceInjected = it.sourceUrl
+                if (!viewModel.hasPreloadJs) return
                 val webJsExtensions = WebJsExtensions(it, this, currentWebView)
                 currentWebView.addJavascriptInterface(webJsExtensions, nameJava)
                 currentWebView.addJavascriptInterface(it, nameSource)
