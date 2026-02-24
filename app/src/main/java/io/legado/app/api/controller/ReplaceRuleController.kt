@@ -79,6 +79,7 @@ object ReplaceRuleController {
             val content = try {
                 if (rule.isRegex) {
                     text.replace(
+                        rule.name,
                         rule.pattern.toRegex(),
                         rule.replacement,
                         rule.getValidTimeoutMillisecond()

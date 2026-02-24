@@ -28,26 +28,20 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.text.dropLast
 import kotlin.text.endsWith
 import kotlin.text.toIntOrNull
+import androidx.core.graphics.drawable.toDrawable
+import android.graphics.Color
 
 class GlideImageGetter(
     context: Context,
     textView: TextView,
-    private  val lifecycle: Lifecycle
+    private val lifecycle: Lifecycle
 ) : Html.ImageGetter, Drawable.Callback {
     private val textViewRef = WeakReference(textView)
     private val contextRef = WeakReference(context)
     private val cacheDrawable = ConcurrentHashMap<String, GlideUrlDrawable>()
     private val pendingImages = mutableSetOf<String>()
     private val emptyDrawable by lazy {
-        object : Drawable() {
-            override fun draw(canvas: Canvas) = Unit
-            override fun setAlpha(alpha: Int) = Unit
-            override fun setColorFilter(colorFilter: ColorFilter?) = Unit
-            @Deprecated("Deprecated in Java")
-            override fun getOpacity(): Int = PixelFormat.TRANSPARENT
-            override fun getIntrinsicWidth(): Int = 0
-            override fun getIntrinsicHeight(): Int = 0
-        }
+        Color.TRANSPARENT.toDrawable()
     }
     private val availableWidth by lazy {
         val textView = textViewRef.get() ?: return@lazy 800
@@ -61,15 +55,17 @@ class GlideImageGetter(
         }
         var style: Map<String, String>? = null
         if (source.startsWith("data:image/svg")) {
-            var data:String? = null
+            var data: String? = null
             val urlMatcher = paramPattern.matcher(source)
             if (urlMatcher.find()) {
                 val urlOptionStr = source.substring(urlMatcher.end())
                 style = GSON.fromJsonObject<Map<String, String>>(urlOptionStr).getOrNull()
                 data = source.take(urlMatcher.start())
             }
-            val inputStream = ByteArrayInputStream(Base64.decode((data ?: source).substringAfter(",")))
-            val (pictureDrawable, size) = SvgUtils.createDrawable(inputStream) ?: return emptyDrawable
+            val inputStream =
+                ByteArrayInputStream(Base64.decode((data ?: source).substringAfter(",")))
+            val (pictureDrawable, size) = SvgUtils.createDrawable(inputStream)
+                ?: return emptyDrawable
             val rect = getDrawableRect(size, style)
             pictureDrawable.bounds = rect
             return pictureDrawable
@@ -103,7 +99,7 @@ class GlideImageGetter(
         if (styleWidth == null && styleType == null) {
             return Rect(0, 0, drawableWidth, drawableHeight)
         }
-        val imgWidth = if (styleWidth?.endsWith("%")  == true) {
+        val imgWidth = if (styleWidth?.endsWith("%") == true) {
             val sWidth = styleWidth.dropLast(1).toIntOrNull() ?: 80
             availableWidth * sWidth / 100
         } else {
@@ -122,7 +118,7 @@ class GlideImageGetter(
             else -> 0
         }
         return Rect(left, 0, left + showWidth, showHeight)
-     }
+    }
 
     private fun notifyImageLoaded(source: String) {
         pendingImages.remove(source)
@@ -149,17 +145,17 @@ class GlideImageGetter(
     ) {
     }
 
-    private inner class GlideUrlDrawable(): Drawable(), Animatable {
+    private inner class GlideUrlDrawable() : Drawable(), Animatable {
         private var mDrawable: Drawable? = null
         private var gDrawable: GifDrawable? = null
 
         fun setDrawable(drawable: Drawable?) {
             if (drawable is GifDrawable) {
-                gDrawable?.apply{
+                gDrawable?.apply {
                     callback = null
                     stop()
                 }
-                gDrawable = drawable.apply{
+                gDrawable = drawable.apply {
                     if (!isRunning) {
                         callback = this@GlideImageGetter
                         start()
@@ -167,7 +163,7 @@ class GlideImageGetter(
                 }
                 mDrawable = null
             } else {
-                gDrawable?.apply{
+                gDrawable?.apply {
                     callback = null
                     stop()
                 }
@@ -177,7 +173,7 @@ class GlideImageGetter(
         }
 
         fun clear() {
-            gDrawable?.apply{
+            gDrawable?.apply {
                 callback = null
                 stop()
             }
@@ -196,7 +192,16 @@ class GlideImageGetter(
 
         @Deprecated("Deprecated in Java")
         override fun getOpacity(): Int {
-            return (mDrawable ?: gDrawable)?.opacity ?: PixelFormat.TRANSLUCENT
+            val drawable = mDrawable ?: gDrawable
+            return if (drawable != null) {
+                when {
+                    drawable.alpha == 0 -> PixelFormat.TRANSPARENT
+                    drawable.alpha == 255 -> PixelFormat.OPAQUE
+                    else -> PixelFormat.TRANSLUCENT
+                }
+            } else {
+                PixelFormat.TRANSLUCENT
+            }
         }
 
         override fun setAlpha(alpha: Int) {
@@ -239,7 +244,8 @@ class GlideImageGetter(
             transition: Transition<in Drawable>?
         ) {
             urlDrawable.setDrawable(drawable)
-            val rect = getDrawableRect(Size(drawable.intrinsicWidth, drawable.intrinsicHeight), style)
+            val rect =
+                getDrawableRect(Size(drawable.intrinsicWidth, drawable.intrinsicHeight), style)
             urlDrawable.bounds = rect
             notifyImageLoaded(source)
         }

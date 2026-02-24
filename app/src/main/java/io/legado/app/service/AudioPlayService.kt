@@ -316,7 +316,6 @@ class AudioPlayService : BaseService(),
                 exoPlayer.play()
             }
             upPlayProgress()
-            upMediaSessionPlaybackState(PlaybackStateCompat.STATE_PLAYING)
             AudioPlay.status = Status.PLAY
             postEvent(EventBus.AUDIO_STATE, Status.PLAY)
             upAudioPlayNotification()

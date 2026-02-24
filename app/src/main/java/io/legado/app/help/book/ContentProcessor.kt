@@ -164,6 +164,7 @@ class ContentProcessor private constructor(
                     try {
                         val tmp = if (item.isRegex) {
                             mContent.replace(
+                                item.name,
                                 item.regex,
                                 item.replacement,
                                 item.getValidTimeoutMillisecond(),

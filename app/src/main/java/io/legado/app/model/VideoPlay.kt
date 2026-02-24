@@ -441,7 +441,11 @@ object VideoPlay : CoroutineScope by MainScope(){
     fun upDurIndex(offset: Int, player: StandardGSYVideoPlayer): Boolean {
         val episodes = episodes ?: return false
         val index = chapterInVolumeIndex + offset
-        if (index < 0 || index >= episodes.size) {
+        if (index < 0) {
+            appCtx.toastOnUi("已到开头")
+            return false
+        }
+        if (index >= episodes.size) {
             appCtx.toastOnUi("已播放完")
             return false
         }
@@ -497,5 +501,9 @@ object VideoPlay : CoroutineScope by MainScope(){
             }
             postEvent(EventBus.VIDEO_SUB_TITLE, videoTitle ?: appCtx.getString(R.string.data_loading))
         }
+    }
+
+    fun getDisplayCover(): String? {
+        return book?.getDisplayCover() ?: rssStar?.image ?: rssRecord?.image
     }
 }
