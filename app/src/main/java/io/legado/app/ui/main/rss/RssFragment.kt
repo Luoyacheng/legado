@@ -183,10 +183,13 @@ class RssFragment() : VMBaseFragment<RssViewModel>(R.layout.fragment_rss), MainF
         if (rssSource.singleUrl) {
             viewModel.getSingleUrl(rssSource) { url ->
                 if (url.startsWith("http", true)) {
-                    startActivity<ReadRssActivity> {
-                        putExtra("title", rssSource.sourceName)
-                        putExtra("origin", url)
-                    }
+                    ReadRssActivity.start(
+                        requireContext(),
+                        true,
+                        rssSource.sourceUrl,
+                        rssSource.sourceName,
+                        url
+                    )
                 } else {
                     context?.openUrl(url)
                 }
@@ -197,11 +200,13 @@ class RssFragment() : VMBaseFragment<RssViewModel>(R.layout.fragment_rss), MainF
                     putExtra("sourceUrl", rssSource.sourceUrl)
                 }
             }) { html ->
-                startActivity<ReadRssActivity> {
-                    putExtra("title", rssSource.sourceName)
-                    putExtra("origin", rssSource.sourceUrl)
-                    putExtra("startHtml", html)
-                }
+                ReadRssActivity.start(
+                    requireContext(),
+                    true,
+                    rssSource.sourceUrl,
+                    rssSource.sourceName,
+                    startHtml = html
+                )
             }
         }
     }

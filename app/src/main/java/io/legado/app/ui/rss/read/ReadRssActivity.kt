@@ -139,7 +139,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
             refreshNameList.add(it)
         }
         viewModel.rssArticle?.let {
-            start(this@ReadRssActivity, it.title, it.link, it.origin)
+            start(this@ReadRssActivity,true, it.origin, it.title, it.link)
         } ?: run {
             viewModel.initData(intent)
         }
@@ -158,7 +158,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
         binding.webViewContainer.addView(currentWebView)
         viewModel.upStarMenuData.observe(this) { upStarMenu() }
         viewModel.upTtsMenuData.observe(this) { upTtsMenu(it) }
-        binding.titleBar.title = intent.getStringExtra("title")
+        viewModel.upTitleData.observe(this) { binding.titleBar.title = it }
         initView()
         initWebView()
         initLiveData()
@@ -216,9 +216,9 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     }
 
     override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
         binding.progressBar.visible()
         binding.progressBar.setDurProgress(30)
-        super.onNewIntent(intent)
         setIntent(intent)
         viewModel.initData(intent)
     }
@@ -721,7 +721,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
                     && !url.contains(title)) {
                     binding.titleBar.title = title
                 } else {
-                    binding.titleBar.title = intent.getStringExtra("title")
+                    binding.titleBar.title = viewModel.upTitleData.value
                 }
             }
             viewModel.rssSource?.injectJs?.let {
@@ -787,13 +787,31 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     }
 
     companion object {
-        fun start(context: Context, title: String?, url: String, origin: String) {
+        fun start(context: Context, singleTop: Boolean, origin: String, title: String? = null, url: String? = null, startHtml: String? = null) {
             context.startActivity<ReadRssActivity> {
-                putExtra("title", title ?: "")
                 putExtra("origin", origin)
+                putExtra("title", title)
                 putExtra("openUrl", url)
+                putExtra("startHtml", startHtml)
+                if (singleTop) {
+                    addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
             }
         }
+
+        /**
+         * 知晓rssArticle的打开
+         */
+        fun start(context: Context, origin: String, title: String?, link: String, sort: String) {
+            context.startActivity<ReadRssActivity> {
+                putExtra("origin", origin)
+                putExtra("title", title)
+                putExtra("link", link)
+                putExtra("sort", sort)
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP) //栈顶复用
+            }
+        }
+
         private val webCookieManager by lazy { android.webkit.CookieManager.getInstance() }
     }
 
