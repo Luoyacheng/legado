@@ -590,7 +590,7 @@ class VideoPlayService : BaseService() {
                 notificationManager.cancel(NotificationId.VideoPlayService)
             }
             application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
-            playerView.getCurrentPlayer().release()
+            playerView.release()
         } catch (e: Exception) {
             e.printStackTrace()
         }
