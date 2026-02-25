@@ -9,13 +9,13 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
-import io.legado.app.help.config.AppConfig
 
 abstract class BaseBooksAdapter<VH : RecyclerView.ViewHolder>(
     val context: Context,
     val callBack: CallBack
 ) : RecyclerView.Adapter<VH>() {
-    private var layoutState: Parcelable? = null
+    private val layoutStates = mutableMapOf<Long, Parcelable?>()
+    private var currentGroupId: Long? = null
     private var layoutManager: RecyclerView.LayoutManager? = null
     protected val inflater: LayoutInflater = LayoutInflater.from(context)
 
@@ -112,14 +112,19 @@ abstract class BaseBooksAdapter<VH : RecyclerView.ViewHolder>(
     private val asyncListDiffer by lazy {
         AsyncListDiffer(this, diffItemCallback).apply {
             addListListener { _, _ ->
-                layoutManager?.onRestoreInstanceState(layoutState)
-                layoutState = null
+                currentGroupId?.let {
+                    layoutManager?.onRestoreInstanceState(layoutStates[it])
+                    layoutStates[it] = null
+                }
             }
         }
     }
 
-    fun updateItems() {
-        layoutState = layoutManager?.onSaveInstanceState()
+    fun updateItems(groupId: Long) {
+        currentGroupId?.let {
+            layoutStates[it] = layoutManager?.onSaveInstanceState()
+        }
+        currentGroupId = groupId
         asyncListDiffer.submitList(callBack.getItems())
     }
 

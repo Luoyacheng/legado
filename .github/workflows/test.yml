@@ -437,42 +437,52 @@ jobs:
           # 创建新Release，带重试机制
           MAX_RETRIES=3
           RETRY_COUNT=0
-          RELEASE_CREATED=false
           RELEASE_ID=""
+          RELEASE_JSON=""
           while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ -z "$RELEASE_ID" ]; do
-            RELEASE_JSON=$(curl -sX POST \
-              -H "Content-Type: application/json" \
-              -H "$AUTH_HEADER" \
-              -d '{
-                "tag_name": "'"$TAG_NAME"'",
-                "name": "'"$RELEASE_NAME"'",
-                "body": "'"${UPDATE_CONTENT//\"/\\\"}"'",
-                "target_commitish": "main",
-                "prerelease": '"$PRERELEASE"'
-              }' \
-              "$API_BASE/releases")
+            set +e
+            RELEASE_JSON=$(curl -sS --fail --tlsv1.2 --retry 3 --retry-delay 5 --retry-connrefused --connect-timeout 10 -X POST \
+                -H "Content-Type: application/json" \
+                -H "$AUTH_HEADER" \
+                -d '{
+                  "tag_name": "'"$TAG_NAME"'",
+                  "name": "'"$RELEASE_NAME"'",
+                  "body": "'"${UPDATE_CONTENT//\"/\\\"}"'",
+                  "target_commitish": "main",
+                  "prerelease": '"$PRERELEASE"'
+                }' \
+                "$API_BASE/releases")
+            CURL_EXIT=$?
+            set -e
 
-            if [ $? -eq 0 ] && [ -n "$RELEASE_JSON" ]; then
+            if [ "${CURL_EXIT:-1}" -eq 0 ] && [ -n "$RELEASE_JSON" ]; then
               RELEASE_ID=$(echo "$RELEASE_JSON" | jq -r '.id // empty')
-              RELEASE_CREATED=true
             else
               RETRY_COUNT=$((RETRY_COUNT+1))
               echo "⚠️  第 $RETRY_COUNT 次重试创建Release..."
               sleep 5
             fi
           done
-          # 检查是否成功创建Release
+
           if [ -z "$RELEASE_ID" ]; then
             echo "❌ 创建Release失败，跳过文件上传"
             exit 1
           fi
+
           # 上传所有APK文件
           for APK_FILE in apk/*.apk; do
-            curl -sX POST \
+            set +e
+            curl -sS --fail --tlsv1.2 --retry 2 --retry-delay 3 --connect-timeout 10 -X POST \
               -H "$AUTH_HEADER" \
               -F "file=@$APK_FILE" \
               "$API_BASE/releases/$RELEASE_ID/attach_files"
-            echo "✅ 已上传 $APK_FILE"
+            CURL_EXIT=$?
+            set -e
+            if [ $CURL_EXIT -eq 0 ]; then
+              echo "✅ 已上传 $APK_FILE"
+            else
+              echo "❌ 上传 $APK_FILE 失败 (curl exit $CURL_EXIT)"
+            fi
           done
 
   update-storage:

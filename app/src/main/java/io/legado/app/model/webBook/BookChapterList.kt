@@ -304,10 +304,12 @@ object BookChapterList {
                 map["${chapter.index}_${chapter.title}"] = Triple(chapter.wordCount, chapter.variable, chapter.imgUrl)
             }
             for (chapter in list) {
-                map["${chapter.index}_${chapter.title}"]?.let { info ->
-                    chapter.wordCount = info.first
-                    chapter.variable = info.second
-                    chapter.imgUrl = info.third
+                map["${chapter.index}_${chapter.title}"]?.let { (w, v, i) ->
+                    chapter.run {
+                        w?.let { wordCount = it }
+                        v?.let { variable = it }
+                        i?.let { imgUrl = it }
+                    }
                 }
             }
         }

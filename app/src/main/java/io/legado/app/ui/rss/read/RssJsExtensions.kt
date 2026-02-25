@@ -3,6 +3,7 @@ package io.legado.app.ui.rss.read
 import android.webkit.JavascriptInterface
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.script.rhino.runScriptWithContext
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BaseSource
 import io.legado.app.data.entities.BookSource
@@ -17,6 +18,7 @@ import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.rss.article.RssSortActivity
 import io.legado.app.ui.widget.dialog.PhotoDialog
 import io.legado.app.utils.isJsonObject
+import io.legado.app.utils.openUrl
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
@@ -140,10 +142,51 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                     } ?: (source as? RssSource) ?: return@launch
                     val title = title ?: toSource.sourceName
                     val sourceUrl = toSource.sourceUrl
-                    val link = url ?: return@launch
-                    val rss =appDb.rssStarDao.get(sourceUrl, link)?.toRecord() ?: appDb.rssArticleDao.getByLink(sourceUrl, link)?.toRecord()
+                    if (url.isNullOrBlank()) {
+                        if (toSource.singleUrl) {
+                            if (sourceUrl.startsWith("http", true)) {
+                                withContext(Main) {
+                                    activity.startActivity<ReadRssActivity> {
+                                        putExtra("title", title)
+                                        putExtra("origin", sourceUrl)
+                                    }
+                                }
+                            } else {
+                                activity.openUrl(sourceUrl)
+                            }
+                            return@launch
+                        }
+                        val startHtml = toSource.startHtml?.let {
+                            when {
+                                it.startsWith("@js:") -> runScriptWithContext {
+                                    toSource.evalJS(it.substring(4)).toString()
+                                }
+
+                                it.startsWith("<js>") -> runScriptWithContext {
+                                    toSource.evalJS(it.substring(4, it.lastIndexOf("<"))).toString()
+                                }
+
+                                else -> it
+                            }
+                        }
+                        withContext(Main) {
+                            if (startHtml.isNullOrBlank()) {
+                                activity.startActivity<RssSortActivity> {
+                                    putExtra("sourceUrl", sourceUrl)
+                                }
+                            } else {
+                                activity.startActivity<ReadRssActivity> {
+                                    putExtra("title", title)
+                                    putExtra("origin", sourceUrl)
+                                    putExtra("startHtml", startHtml)
+                                }
+                            }
+                        }
+                        return@launch
+                    }
+                    val rss =appDb.rssStarDao.get(sourceUrl, url)?.toRecord() ?: appDb.rssArticleDao.getByLink(sourceUrl, url)?.toRecord()
                     val rssReadRecord = rss ?: RssReadRecord(
-                        record = link,
+                        record = url,
                         title = title,
                         origin = sourceUrl,
                         readTime = System.currentTimeMillis()

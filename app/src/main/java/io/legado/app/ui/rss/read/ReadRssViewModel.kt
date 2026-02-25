@@ -43,7 +43,6 @@ class ReadRssViewModel(application: Application) : BaseViewModel(application) {
     val upStarMenuData = MutableLiveData<Boolean>()
     var headerMap: Map<String, String> = emptyMap()
     var origin: String? = null
-    var cacheFirst = false
     var hasPreloadJs = false
 
     fun initData(intent: Intent, success: (() -> Unit)? = null) {
@@ -51,8 +50,7 @@ class ReadRssViewModel(application: Application) : BaseViewModel(application) {
             val origin = intent.getStringExtra("origin") ?: return@execute
             this@ReadRssViewModel.origin = origin
             val link = intent.getStringExtra("link")
-            rssSource = appDb.rssSourceDao.getByKey(origin)?.also{
-                cacheFirst = it.cacheFirst
+            rssSource = appDb.rssSourceDao.getByKey(origin)?.also {
                 hasPreloadJs = !it.preloadJs.isNullOrBlank()
             }
             headerMap = runScriptWithContext {

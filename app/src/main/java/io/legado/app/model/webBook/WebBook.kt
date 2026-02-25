@@ -414,7 +414,10 @@ object WebBook {
             )
             val checkJs = bookSource.loginCheckJs
             val res = kotlin.runCatching {
-                analyzeUrl.getStrResponseAwait().let {
+                analyzeUrl.getStrResponseAwait(
+                    jsStr = contentRule.webJs,
+                    sourceRegex = contentRule.sourceRegex
+                ).let {
                     if (!checkJs.isNullOrBlank()) { //检测书源是否已登录
                         analyzeUrl.evalJS(checkJs, it) as StrResponse
                     } else {
