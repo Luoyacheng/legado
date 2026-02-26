@@ -146,10 +146,12 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                         if (toSource.singleUrl) {
                             if (sourceUrl.startsWith("http", true)) {
                                 withContext(Main) {
-                                    activity.startActivity<ReadRssActivity> {
-                                        putExtra("title", title)
-                                        putExtra("origin", sourceUrl)
-                                    }
+                                    ReadRssActivity.start(
+                                        activity,
+                                        origin.isNullOrEmpty(),
+                                        sourceUrl,
+                                        title
+                                    )
                                 }
                             } else {
                                 activity.openUrl(sourceUrl)
@@ -175,11 +177,13 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                                     putExtra("sourceUrl", sourceUrl)
                                 }
                             } else {
-                                activity.startActivity<ReadRssActivity> {
-                                    putExtra("title", title)
-                                    putExtra("origin", sourceUrl)
-                                    putExtra("startHtml", startHtml)
-                                }
+                                ReadRssActivity.start(
+                                    activity,
+                                    origin.isNullOrEmpty(),
+                                    sourceUrl,
+                                    title,
+                                    startHtml = startHtml
+                                )
                             }
                         }
                         return@launch
@@ -193,7 +197,13 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                     )
                     appDb.rssReadRecordDao.insertRecord(rssReadRecord) //留下历史记录
                     withContext(Main) {
-                        ReadRssActivity.start(activity, title, url, sourceUrl)
+                        ReadRssActivity.start(
+                            activity,
+                            origin.isNullOrEmpty(),
+                            sourceUrl,
+                            title,
+                            url
+                        )
                     }
                 }
 

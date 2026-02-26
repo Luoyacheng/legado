@@ -25,12 +25,13 @@ object ReadRss {
     fun readRss(activity: AppCompatActivity, record: RssReadRecord) {
         val type = record.type
         if (type == 0) {
-            activity.startActivity<ReadRssActivity> {
-                putExtra("title", record.title)
-                putExtra("origin", record.origin)
-                putExtra("link", record.record)
-                putExtra("sort", record.sort)
-            }
+            ReadRssActivity.start(
+                activity,
+                record.origin,
+                record.title,
+                link = record.record,
+                sort = record.sort
+            )
             return
         }
         if (type == 2) {
@@ -50,12 +51,13 @@ object ReadRss {
         val type = rssArticle.type
         if (type == 0) {
             //web网页
-            fragment.startActivity<ReadRssActivity> {
-                putExtra("title", rssArticle.title)
-                putExtra("origin", rssArticle.origin)
-                putExtra("link", rssArticle.link)
-                putExtra("sort", rssArticle.sort)
-            }
+            ReadRssActivity.start(
+                fragment.requireContext(),
+                rssArticle.origin,
+                rssArticle.title,
+                link = rssArticle.link,
+                sort = rssArticle.sort
+            )
             return
         }
         if (type == 2) {

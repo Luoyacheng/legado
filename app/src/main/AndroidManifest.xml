@@ -276,7 +276,7 @@
             android:name=".ui.rss.read.ReadRssActivity"
             android:configChanges="orientation|screenSize"
             android:hardwareAccelerated="true"
-            android:launchMode="singleTop" />
+            android:launchMode="standard" />
         <!-- 导入书籍 -->
         <activity
             android:name=".ui.book.import.local.ImportBookActivity"

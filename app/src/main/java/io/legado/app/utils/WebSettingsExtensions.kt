@@ -20,7 +20,7 @@ fun WebSettings.setDarkeningAllowed(allow: Boolean) {
             it.printOnDebug()
         }
     }
-    if (AppConfig.isNightTheme) {
+    if (allow) {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
             @Suppress("DEPRECATION")
             WebSettingsCompat.setForceDarkStrategy(

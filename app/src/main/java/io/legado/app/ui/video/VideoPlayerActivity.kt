@@ -488,6 +488,7 @@ class VideoPlayerActivity : VMBaseActivity<ActivityVideoPlayerBinding, VideoPlay
     override fun onDestroy() {
         super.onDestroy()
         VideoPlay.saveRead()
+        VideoPlay.stopLoading()
         playerView.getCurrentPlayer().release()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }

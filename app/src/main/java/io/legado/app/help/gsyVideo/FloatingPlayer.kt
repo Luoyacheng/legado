@@ -112,6 +112,9 @@ class FloatingPlayer : StandardGSYVideoPlayer {
         VideoPlay.saveRead()
         mSeekOnStart = VideoPlay.durChapterPos.toLong()
     }
+    override fun getCurrentPlayer(): FloatingPlayer {
+        return this
+    }
 
     /**********以下重载GSYVideoPlayer的GSYVideoViewBridge相关实现***********/
     override fun getGSYVideoManager(): ExoVideoManager {

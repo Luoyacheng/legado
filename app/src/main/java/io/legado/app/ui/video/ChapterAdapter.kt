@@ -33,15 +33,22 @@ class ChapterAdapter(
     }
 
     override fun onBindViewHolder(holder: ChapterViewHolder, position: Int) {
-        holder.bind(chapters[position], position == selectedPosition)
+        if (position >= 0 && position < chapters.size) {
+            holder.bind(chapters[position], position == selectedPosition)
+        }
     }
 
     override fun getItemCount(): Int = chapters.size
 
     fun updateSelectedPosition(newPosition: Int) {
+        if (newPosition < 0 || newPosition >= chapters.size) {
+            return
+        }
         val oldPosition = selectedPosition
         selectedPosition = newPosition
-        notifyItemChanged(oldPosition)
+        if (oldPosition >= 0 && oldPosition < chapters.size) {
+            notifyItemChanged(oldPosition)
+        }
         notifyItemChanged(newPosition)
     }
 

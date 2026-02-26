@@ -36,7 +36,6 @@ import io.legado.app.help.gsyVideo.VideoPlayer
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.rss.Rss
 import io.legado.app.model.webBook.WebBook
-import io.legado.app.model.SourceCallBack
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.MD5Utils
 import io.legado.app.utils.NetworkUtils
@@ -47,6 +46,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.withContext
 import splitties.init.appCtx
 import java.io.File
@@ -94,6 +95,7 @@ object VideoPlay : CoroutineScope by MainScope(){
 
     val videoManager by lazy { ExoVideoManager() }
     private var isLoading = false
+    private val loadScope = CoroutineScope(SupervisorJob() + IO)
     var videoUrl: String? = null //播放链接
     var singleUrl = false
     var videoTitle: String? = null
@@ -131,21 +133,27 @@ object VideoPlay : CoroutineScope by MainScope(){
         val player = player.getCurrentPlayer()
         if (singleUrl) {
             val mUrl = videoUrl ?: return
-            CacheManager.getLong(VIDEO_POS_NAME + mUrl)?.let {
-                player.seekOnStart = it
-            }
-            inBookshelf = true
-            val analyzeUrl = AnalyzeUrl(
-                mUrl,
-                source = source,
-                ruleData = book,
-                chapter = null
-            )
-            player.mapHeadData = analyzeUrl.headerMap
-            val url = analyzeUrl.url
-            player.setUp(url, false, File(appCtx.externalCache, "exoplayer"), videoTitle)
-            if (autoPlay) {
-                player.startPlayLogic()
+            Coroutine.async(loadScope, IO) {
+                CacheManager.getLong(VIDEO_POS_NAME + mUrl)?.let {
+                    player.seekOnStart = it
+                }
+                inBookshelf = true
+                val analyzeUrl = AnalyzeUrl(
+                    mUrl,
+                    source = source,
+                    ruleData = book,
+                    chapter = null
+                )
+                withContext(Main) {
+                    player.mapHeadData = analyzeUrl.headerMap
+                    val url = analyzeUrl.url
+                    player.setUp(url, false, File(appCtx.externalCache, "exoplayer"), videoTitle)
+                    if (autoPlay) {
+                        player.startPlayLogic()
+                    }
+                }
+            }.onError {
+                AppLog.put("加载视频链接失败", it, true)
             }
             return
         }
@@ -158,20 +166,31 @@ object VideoPlay : CoroutineScope by MainScope(){
             }
             val ruleContent = s.ruleContent
             if (ruleContent.isNullOrBlank()) {
-                val mUrl = rssArticle.link
-                videoUrl = mUrl
-                val analyzeUrl = AnalyzeUrl(
-                    mUrl,
-                    source = source,
-                    ruleData = rssArticle
-                )
-                player.mapHeadData = analyzeUrl.headerMap
-                player.setUp(analyzeUrl.url, false, File(appCtx.externalCache, "exoplayer"), rssArticle.title)
-                if (autoPlay) {
-                    player.startPlayLogic()
+                Coroutine.async(loadScope, IO) {
+                    val mUrl = rssArticle.link
+                    videoUrl = mUrl
+                    val analyzeUrl = AnalyzeUrl(
+                        mUrl,
+                        source = source,
+                        ruleData = rssArticle
+                    )
+                    withContext(Main) {
+                        player.mapHeadData = analyzeUrl.headerMap
+                        player.setUp(
+                            analyzeUrl.url,
+                            false,
+                            File(appCtx.externalCache, "exoplayer"),
+                            rssArticle.title
+                        )
+                        if (autoPlay) {
+                            player.startPlayLogic()
+                        }
+                    }
+                }.onError {
+                    AppLog.put("加载订阅源视频链接失败", it, true)
                 }
             } else {
-                Rss.getContent(this, rssArticle, ruleContent, s)
+                Rss.getContent(loadScope, rssArticle, ruleContent, s)
                     .onSuccess(IO) { content ->
                         val content = content.trim()
                         val mUrl = if (content.isEmpty()) {
@@ -199,7 +218,7 @@ object VideoPlay : CoroutineScope by MainScope(){
                             }
                         }
                     }.onError {
-                        AppLog.put("加载为链接的正文失败", it, true)
+                        AppLog.put("加载订阅源为链接的正文失败", it, true)
                     }
             }
             return
@@ -229,7 +248,7 @@ object VideoPlay : CoroutineScope by MainScope(){
             appCtx.toastOnUi("未找到章节")
             return
         }
-        WebBook.getContent(this, source as BookSource, book, chapter)
+        WebBook.getContent(loadScope, source as BookSource, book, chapter)
             .onSuccess(IO) { content ->
                 val content = content.trim()
                 val mUrl = if (content.isEmpty()) {
@@ -374,6 +393,10 @@ object VideoPlay : CoroutineScope by MainScope(){
         sMediaPlayerListener?.onAutoCompletion()
         sMediaPlayerListener = null
         sSwitchVideo = null
+    }
+
+    fun stopLoading() {
+        loadScope.coroutineContext.cancelChildren()
     }
 
     fun initSource(sourceKey: String?, sourceType: Int?, bookUrl: String?, record:String?): Boolean {
