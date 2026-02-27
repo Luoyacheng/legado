@@ -88,7 +88,7 @@ class AboutFragment : PreferenceFragmentCompat() {
      */
     private fun checkUpdate() {
         waitDialog.show()
-        AppUpdate.giteeUpdate?.run {
+        AppUpdate.giteeUpdate.run {
             check(lifecycleScope)
                 .onSuccess {
                     showDialogFragment(

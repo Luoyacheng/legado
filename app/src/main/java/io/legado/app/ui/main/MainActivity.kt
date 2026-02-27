@@ -53,10 +53,14 @@ import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import splitties.views.bottomPadding
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import androidx.core.view.get
+import io.legado.app.help.update.AppUpdate
+import io.legado.app.ui.about.UpdateDialog
+import kotlin.time.Duration.Companion.hours
 
 /**
  * 主界面
@@ -204,10 +208,10 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     /**
      * 用户隐私与协议
      */
-    private suspend fun privacyPolicy(): Boolean = suspendCoroutine { block ->
+    private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine { block ->
         if (LocalConfig.privacyPolicyOk) {
             block.resume(true)
-            return@suspendCoroutine
+            return@suspendCancellableCoroutine
         }
         val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
         alert(getString(R.string.privacy_policy), privacyPolicy) {
@@ -225,10 +229,21 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     /**
      * 版本更新日志
      */
-    private suspend fun upVersion() = suspendCoroutine { block ->
+    private suspend fun upVersion() = suspendCancellableCoroutine { block ->
         if (LocalConfig.versionCode == appInfo.versionCode) {
+            if (AppConfig.autoUpdateVariant) {
+                if (LocalConfig.lastCheckUpdate + 24.hours.inWholeMilliseconds < System.currentTimeMillis()) {
+                    AppUpdate.giteeUpdate.check(lifecycleScope)
+                        .onSuccess {
+                            showDialogFragment(
+                                UpdateDialog(it)
+                            )
+                        }
+                    LocalConfig.lastCheckUpdate = System.currentTimeMillis()
+                }
+            }
             block.resume(null)
-            return@suspendCoroutine
+            return@suspendCancellableCoroutine
         }
         LocalConfig.versionCode = appInfo.versionCode
         if (LocalConfig.isFirstOpenApp) {
@@ -253,10 +268,10 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     /**
      * 设置本地密码
      */
-    private suspend fun setLocalPassword() = suspendCoroutine { block ->
+    private suspend fun setLocalPassword() = suspendCancellableCoroutine { block ->
         if (LocalConfig.password != null) {
             block.resume(null)
-            return@suspendCoroutine
+            return@suspendCancellableCoroutine
         }
         alert(R.string.set_local_password, R.string.set_local_password_summary) {
             val editTextBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
@@ -408,8 +423,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
         override fun onPageSelected(position: Int) {
             pagePosition = position
-            binding.bottomNavigationView.menu
-                .getItem(realPositions[position]).isChecked = true
+            binding.bottomNavigationView.menu[realPositions[position]].isChecked = true
         }
 
     }

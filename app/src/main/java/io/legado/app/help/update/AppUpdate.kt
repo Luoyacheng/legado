@@ -8,7 +8,7 @@ object AppUpdate {
     val gitHubUpdate: AppUpdateInterface? by lazy {
         AppUpdateGitHub
     }
-    val giteeUpdate: AppUpdateInterface? by lazy {
+    val giteeUpdate: AppUpdateInterface by lazy {
         AppUpdateGitee
     }
 

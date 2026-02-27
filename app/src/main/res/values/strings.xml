@@ -1341,4 +1341,5 @@
     <string name="invalid_file_path">文件路径无效</string>
     <string name="is_system_tts_no_export">无法导出系统tts</string>
     <string name="click_image_way">点击图片方式</string>
+    <string name="auto_update_summary">每天自动检查软件是否更新</string>
 </resources>

@@ -182,6 +182,12 @@
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
+            android:key="autoUpdateVariant"
+            android:summary="@string/auto_update_summary"
+            android:title="@string/auto_update" />
+
+        <io.legado.app.lib.prefs.SwitchPreference
+            android:defaultValue="true"
             android:key="showMangaUi"
             android:title="@string/show_manga_ui"
             app:iconSpaceReserved="false" />
