@@ -551,7 +551,7 @@ object ReadBookConfig {
         private var textColor: String = "#3E3D3B",//白天文字颜色
         private var textColorNight: String = "#ADADAD",//夜间文字颜色
         private var textColorEInk: String = "#000000",
-        private var textAccentColor: String = "#834E00",//白天强调文字颜色
+        private var textAccentColor: String = "#E53935",//白天强调文字颜色
         private var textAccentColorNight: String = "#FE4D55",//夜间强调文字颜色
         private var textAccentColorEInk: String = "#000000",
         private var pageAnim: Int = 0,//翻页动画
