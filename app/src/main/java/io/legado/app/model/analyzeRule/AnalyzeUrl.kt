@@ -37,6 +37,7 @@ import io.legado.app.help.http.postForm
 import io.legado.app.help.http.postJson
 import io.legado.app.help.http.postMultipart
 import io.legado.app.help.source.getShareScope
+import io.legado.app.model.Debug
 import io.legado.app.utils.EncoderUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.GSONStrict
@@ -383,6 +384,9 @@ class AnalyzeUrl(
     }
 
     fun put(key: String, value: String): String {
+        if (key == "bookName" || key == "title") {
+            Debug.log("≡变量 $key 在特定情况下会被覆盖，建议使用其他键名")
+        }
         chapter?.putVariable(key, value)
             ?: ruleData?.putVariable(key, value)
         return value

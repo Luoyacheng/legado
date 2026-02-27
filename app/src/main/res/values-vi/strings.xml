@@ -820,7 +820,7 @@
     <string name="sync_book_progress_t">Đồng bộ tiến độ đọc</string>
     <string name="sync_book_progress_s">Đồng bộ tiến độ đọc khi vào/ra giao diện đọc</string>
     <string name="sync_book_progress_plus_t">Tăng cường đồng bộ</string>
-    <string name="sync_book_progress_plus_s">Đồng bộ tiến độ trên đám mây khi vào lại trang (ví dụ: sau khi tắt màn hình, quay lại từ nền, v.v.) hoặc khi mạng khả dụng</string>
+    <string name="sync_book_progress_plus_s">Đồng bộ lại tiến trình trên đám mây khi quay lại trang (tắt màn hình, trở lại từ nền, v.v.) hoặc khi mạng khả dụng. Sẽ yêu cầu xác nhận trước khi đồng bộ tiến trình mới.</string>
     <string name="sync_book_progress_success">Đồng bộ tiến độ thành công</string>
     <string name="create_bookmark_error">Không thể tạo dấu trang</string>
     <string name="single_url">URL đơn</string>

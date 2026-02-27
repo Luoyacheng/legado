@@ -792,6 +792,9 @@ class AnalyzeRule(
      * 保存数据
      */
     fun put(key: String, value: String): String {
+        if (key == "bookName" || key == "title") {
+            Debug.log("≡变量 $key 在特定情况下会被覆盖，建议使用其他键名")
+        }
         chapter?.putVariable(key, value)
             ?: book?.putVariable(key, value)
             ?: ruleData?.putVariable(key, value)

@@ -819,7 +819,7 @@
     <string name="sync_book_progress_t">同步閱讀進度</string>
     <string name="sync_book_progress_s">進入退出閱讀介面時同步閱讀進度</string>
     <string name="sync_book_progress_plus_t">同步增強</string>
-    <string name="sync_book_progress_plus_s">重新進入頁面（熄屏、背景返回等）或網路變為可用時同步雲端進度</string>
+    <string name="sync_book_progress_plus_s">重新進入頁面（息屏、從背景返回等）或網路恢復可用時同步雲端進度，同步新進度時會詢問</string>
     <string name="create_bookmark_error">建立書籤失敗</string>
     <string name="single_url">單URL</string>
     <string name="export_bookshelf">匯出書單</string>
