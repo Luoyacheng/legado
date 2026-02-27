@@ -615,7 +615,6 @@ class TextChapterLayout(
         }
         val staticLayout = if (atLeastApi28) {
             StaticLayout.Builder.obtain(spanned, 0, spanned.length, textPaint, width)
-                .setLineSpacing(paragraphSpacing.toFloat(), lineSpacingExtra)
                 .setIncludePad(true)
                 .setUseLineSpacingFromFallbacks(true)
                 .build()
@@ -626,8 +625,8 @@ class TextChapterLayout(
                 textPaint,
                 width,
                 Layout.Alignment.ALIGN_NORMAL,
-                lineSpacingExtra,
-                paragraphSpacing.toFloat(),
+                1f,
+                0f,
                 true
             )
         }
