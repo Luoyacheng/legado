@@ -27,6 +27,7 @@ import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.model.ImageProvider
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
+import io.legado.app.model.SourceCallBack
 import io.legado.app.model.localBook.LocalBook
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.BaseReadAloudService
@@ -136,6 +137,9 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
             ReadBook.loadContent(resetPageOffset = true)
         } else {
             ReadBook.loadOrUpContent()
+        }
+        ReadBook.bookSource?.let {
+            SourceCallBack.callBackBook(SourceCallBack.START_READ, it, book, ReadBook.curTextChapter?.chapter)
         }
         if (ReadBook.chapterChanged) {
             // 有章节跳转不同步阅读进度

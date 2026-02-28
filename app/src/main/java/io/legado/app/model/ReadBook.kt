@@ -164,7 +164,6 @@ object ReadBook : CoroutineScope by MainScope() {
         } else {
             appDb.bookSourceDao.getBookSource(book.origin)?.let {
                 bookSource = it
-                SourceCallBack.callBackBook(SourceCallBack.START_READ, it, book, curTextChapter?.chapter)
                 if (book.getImageStyle().isNullOrBlank()) {
                     var imageStyle = it.getContentRule().imageStyle
                     if (imageStyle.isNullOrBlank() && (book.isImage || book.isPdf)) {

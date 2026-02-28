@@ -98,7 +98,9 @@ jobs:
               UPDATED_CONTENT="$COMMIT_MSG"
           else
             if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-              COMMIT_RANGE="${{ github.event.before }}..${{ github.event.after }}"
+              BEFORE_SHA=$(git rev-parse HEAD~1)
+              AFTER_SHA=$(git rev-parse HEAD)
+              COMMIT_RANGE="$BEFORE_SHA..$AFTER_SHA"
               if git rev-parse "$COMMIT_RANGE" >/dev/null 2>&1; then
                 UPDATED_CONTENT=$(git log $COMMIT_RANGE --pretty=format:"• %s" --reverse 2>/dev/null | grep -v "^• Merge" || echo "• $COMMIT_MSG")
               else
