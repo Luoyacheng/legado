@@ -1,7 +1,6 @@
 package io.legado.app.ui.widget.recycler
 
 import android.content.Context
-import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,23 +13,13 @@ class NoChildScrollLinearLayoutManager @JvmOverloads constructor(
     defStyleRes: Int = 0
 ) : LinearLayoutManager(context, attrs, defStyleAttr, defStyleRes) {
 
-    override fun requestChildRectangleOnScreen(
+    override fun onRequestChildFocus(
         parent: RecyclerView,
+        state: RecyclerView.State,
         child: View,
-        rect: Rect,
-        immediate: Boolean,
-        focusedChildVisible: Boolean
+        focused: View?
     ): Boolean {
-        return false
-    }
-
-    override fun requestChildRectangleOnScreen(
-        parent: RecyclerView,
-        child: View,
-        rect: Rect,
-        immediate: Boolean
-    ): Boolean {
-        return false
+        return true
     }
 
 }
