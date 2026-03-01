@@ -4,13 +4,20 @@ import android.webkit.JavascriptInterface
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.script.rhino.runScriptWithContext
+import io.legado.app.constant.BookType
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BaseSource
+import io.legado.app.data.entities.Book
+import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.RssReadRecord
 import io.legado.app.data.entities.RssSource
 import io.legado.app.help.JsExtensions
+import io.legado.app.model.AudioPlay
+import io.legado.app.model.ReadBook
+import io.legado.app.model.VideoPlay
 import io.legado.app.model.analyzeRule.AnalyzeRule
+import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setChapter
 import io.legado.app.ui.association.AddToBookshelfDialog
 import io.legado.app.ui.book.explore.ExploreShowActivity
 import io.legado.app.ui.book.search.SearchActivity
@@ -32,7 +39,11 @@ import java.net.URL
 
 
 @Suppress("unused")
-open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : JsExtensions {
+open class RssJsExtensions(
+    activity: AppCompatActivity?,
+    source: BaseSource?,
+    val bookType: Int = 0
+) : JsExtensions {
 
     val activityRef: WeakReference<AppCompatActivity> = WeakReference(activity)
     val sourceRef: WeakReference<BaseSource?> = WeakReference(source)
@@ -102,6 +113,7 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                         is BookSource -> {
                             withContext(Main) {
                                 activity.startActivity<SourceLoginActivity> {
+                                    putExtra("bookType", bookType)
                                     putExtra("type", "bookSource")
                                     putExtra("key", toSource.bookSourceUrl)
                                 }
@@ -142,13 +154,14 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                     } ?: (source as? RssSource) ?: return@launch
                     val title = title ?: toSource.sourceName
                     val sourceUrl = toSource.sourceUrl
+                    val singleTop = sourceUrl == source.getKey()
                     if (url.isNullOrBlank()) {
                         if (toSource.singleUrl) {
                             if (sourceUrl.startsWith("http", true)) {
                                 withContext(Main) {
                                     ReadRssActivity.start(
                                         activity,
-                                        origin.isNullOrEmpty(),
+                                        singleTop,
                                         sourceUrl,
                                         title
                                     )
@@ -179,7 +192,7 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                             } else {
                                 ReadRssActivity.start(
                                     activity,
-                                    origin.isNullOrEmpty(),
+                                    singleTop,
                                     sourceUrl,
                                     title,
                                     startHtml = startHtml
@@ -199,7 +212,7 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
                     withContext(Main) {
                         ReadRssActivity.start(
                             activity,
-                            origin.isNullOrEmpty(),
+                            singleTop,
                             sourceUrl,
                             title,
                             url
@@ -238,7 +251,37 @@ open class RssJsExtensions(activity: AppCompatActivity?, source: BaseSource?) : 
     }
 
     /** AnalyzeRule实现 **/
-    open val analyzeRule by lazy { AnalyzeRule(source = getSource()) }
+    private val bookAndChapter by lazy {
+        var book: Book? = null
+        var chapter: BookChapter? = null
+        when (bookType) {
+            BookType.text -> {
+                book = ReadBook.book?.also {
+                    chapter = appDb.bookChapterDao.getChapter(
+                        it.bookUrl,
+                        ReadBook.durChapterIndex
+                    )
+                }
+            }
+
+            BookType.audio -> {
+                book = AudioPlay.book
+                chapter = AudioPlay.durChapter
+            }
+
+            BookType.video -> {
+                book = VideoPlay.book
+                chapter = VideoPlay.chapter
+            }
+        }
+        Pair(book, chapter)
+    }
+    private val book: Book? get() = bookAndChapter.first
+    private val chapter: BookChapter? get() = bookAndChapter.second
+
+    val analyzeRule by lazy {
+        AnalyzeRule(book, source = getSource()).setChapter(chapter)
+    }
 
     @JavascriptInterface
     @JvmOverloads

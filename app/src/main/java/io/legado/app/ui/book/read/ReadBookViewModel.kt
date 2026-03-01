@@ -134,12 +134,13 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
         }
         ReadBook.upMsg(null)
         if (!isSameBook) {
-            ReadBook.loadContent(resetPageOffset = true)
+            ReadBook.loadContent(resetPageOffset = true) {
+                ReadBook.bookSource?.let {
+                    SourceCallBack.callBackBook(SourceCallBack.START_READ, it, book, ReadBook.curTextChapter?.chapter)
+                }
+            }
         } else {
             ReadBook.loadOrUpContent()
-        }
-        ReadBook.bookSource?.let {
-            SourceCallBack.callBackBook(SourceCallBack.START_READ, it, book, ReadBook.curTextChapter?.chapter)
         }
         if (ReadBook.chapterChanged) {
             // 有章节跳转不同步阅读进度

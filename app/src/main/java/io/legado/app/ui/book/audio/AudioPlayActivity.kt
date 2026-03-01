@@ -132,7 +132,14 @@ class AudioPlayActivity :
             R.id.menu_custom_btn -> {
                 AudioPlay.bookSource?.let {source ->
                     AudioPlay.book?.let { book ->
-                        SourceCallBack.callBackBtn(this,SourceCallBack.CLICK_CUSTOM_BUTTON, source, book, AudioPlay.durChapter)
+                        SourceCallBack.callBackBtn(
+                            this,
+                            SourceCallBack.CLICK_CUSTOM_BUTTON,
+                            source,
+                            book,
+                            AudioPlay.durChapter,
+                            BookType.audio
+                        )
                     }
                 }
             }
@@ -149,7 +156,14 @@ class AudioPlayActivity :
             R.id.menu_wake_lock -> AppConfig.audioPlayUseWakeLock = !AppConfig.audioPlayUseWakeLock
             R.id.menu_copy_audio_url -> {
                 AudioPlay.book?.let {
-                    SourceCallBack.callBackBtn(this, SourceCallBack.CLICK_COPY_PLAY_URL, AudioPlay.bookSource, it, AudioPlay.durChapter) {
+                    SourceCallBack.callBackBtn(
+                        this,
+                        SourceCallBack.CLICK_COPY_PLAY_URL,
+                        AudioPlay.bookSource,
+                        it,
+                        AudioPlay.durChapter,
+                        BookType.audio
+                    ) {
                         sendToClip(AudioPlayService.url)
                     }
                 }

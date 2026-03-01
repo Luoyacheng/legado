@@ -410,7 +410,14 @@ class VideoPlayerActivity : VMBaseActivity<ActivityVideoPlayerBinding, VideoPlay
             R.id.menu_custom_btn -> {
                 (VideoPlay.source as? BookSource)?.let {source ->
                     VideoPlay.book?.let { book ->
-                        SourceCallBack.callBackBtn(this, SourceCallBack.CLICK_CUSTOM_BUTTON, source, book, VideoPlay.chapter)
+                        SourceCallBack.callBackBtn(
+                            this,
+                            SourceCallBack.CLICK_CUSTOM_BUTTON,
+                            source,
+                            book,
+                            VideoPlay.chapter,
+                            BookType.video
+                        )
                     }
                 }
             }
@@ -442,7 +449,14 @@ class VideoPlayerActivity : VMBaseActivity<ActivityVideoPlayerBinding, VideoPlay
                     return true
                 }
                 VideoPlay.book?.let {
-                    SourceCallBack.callBackBtn(this, SourceCallBack.CLICK_COPY_PLAY_URL, VideoPlay.source as? BookSource, it, VideoPlay.chapter) {
+                    SourceCallBack.callBackBtn(
+                        this,
+                        SourceCallBack.CLICK_COPY_PLAY_URL,
+                        VideoPlay.source as? BookSource,
+                        it,
+                        VideoPlay.chapter,
+                        BookType.video
+                    ) {
                         sendToClip(url)
                     }
                 }

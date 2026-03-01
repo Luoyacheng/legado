@@ -4,19 +4,10 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import io.legado.app.constant.BookType
-import io.legado.app.data.appDb
 import io.legado.app.data.entities.BaseSource
-import io.legado.app.data.entities.Book
-import io.legado.app.data.entities.BookChapter
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.CacheManager
 import io.legado.app.help.coroutine.Coroutine
-import io.legado.app.model.AudioPlay
-import io.legado.app.model.ReadBook
-import io.legado.app.model.VideoPlay
-import io.legado.app.model.analyzeRule.AnalyzeRule
-import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setChapter
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setCoroutineContext
 import io.legado.app.ui.rss.read.RssJsExtensions
 import io.legado.app.utils.GSON
@@ -28,9 +19,9 @@ import java.util.UUID
 class WebJsExtensions(
     source: BaseSource, activity: AppCompatActivity?,
     private val webView: WebView,
-    private val bookType: Int = 0,
+    bookType: Int = 0,
     callback: Callback? = null
-): RssJsExtensions(activity, source) {
+): RssJsExtensions(activity, source, bookType) {
     private val callbackRef: WeakReference<Callback> = WeakReference(callback)
 
     interface Callback {
@@ -40,38 +31,6 @@ class WebJsExtensions(
     @JavascriptInterface
     fun upConfig(config: String) {
         callbackRef.get()?.upConfig(config)
-    }
-
-    private val bookAndChapter by lazy {
-        var book: Book? = null
-        var chapter: BookChapter? = null
-        when (bookType) {
-            BookType.text -> {
-                book = ReadBook.book?.also {
-                    chapter = appDb.bookChapterDao.getChapter(
-                        it.bookUrl,
-                        ReadBook.durChapterIndex
-                    )
-                }
-            }
-
-            BookType.audio -> {
-                book = AudioPlay.book
-                chapter = AudioPlay.durChapter
-            }
-
-            BookType.video -> {
-                book = VideoPlay.book
-                chapter = VideoPlay.chapter
-            }
-        }
-        Pair(book, chapter)
-    }
-    private val book: Book? get() = bookAndChapter.first
-    private val chapter: BookChapter? get() = bookAndChapter.second
-
-    override val analyzeRule by lazy {
-        AnalyzeRule(book, source = getSource()).setChapter(chapter)
     }
 
     /**

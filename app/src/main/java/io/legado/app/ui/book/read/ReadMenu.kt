@@ -56,6 +56,7 @@ import io.legado.app.utils.visible
 import splitties.views.onClick
 import splitties.views.onLongClick
 import androidx.core.graphics.toColorInt
+import io.legado.app.constant.BookType
 import io.legado.app.utils.buildMainHandler
 
 /**
@@ -447,14 +448,28 @@ class ReadMenu @JvmOverloads constructor(
             val book = ReadBook.book ?: return@setOnClickListener
             val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex)
             activity?.let { activity ->
-                SourceCallBack.callBackBtn(activity, SourceCallBack.CLICK_CUSTOM_BUTTON, ReadBook.bookSource, book, chapter)
+                SourceCallBack.callBackBtn(
+                    activity,
+                    SourceCallBack.CLICK_CUSTOM_BUTTON,
+                    ReadBook.bookSource,
+                    book,
+                    chapter,
+                    BookType.text
+                )
             }
         }
         tvCustomBtn.setOnLongClickListener {
             val book = ReadBook.book ?: return@setOnLongClickListener true
             val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex)
             activity?.let { activity ->
-                SourceCallBack.callBackBtn(activity, SourceCallBack.LONG_CLICK_CUSTOM_BUTTON, ReadBook.bookSource, book, chapter)
+                SourceCallBack.callBackBtn(
+                    activity,
+                    SourceCallBack.LONG_CLICK_CUSTOM_BUTTON,
+                    ReadBook.bookSource,
+                    book,
+                    chapter,
+                    BookType.text
+                )
             }
             true
         }
