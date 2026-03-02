@@ -240,7 +240,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 1
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           path: apk/
 
@@ -314,7 +314,7 @@ jobs:
       LANZOU_URL: ${{ secrets.LANZOU_URL }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           path: apk/
       - working-directory: apk/
@@ -331,7 +331,7 @@ jobs:
     if: github.event_name != 'pull_request' && needs.prepare.outputs.telegram == 'yes'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           path: apk/
       - id: set-tags
@@ -374,7 +374,7 @@ jobs:
     if: github.event_name != 'pull_request' && needs.prepare.outputs.gitee == 'yes'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           path: apk/
       - working-directory: apk/
@@ -492,7 +492,7 @@ jobs:
     if: github.event_name != 'pull_request'&& needs.prepare.outputs.sgithub == 'yes' && needs.prepare.outputs.updateLog_updated == 'yes'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: legado.app.releaseS
           path: ./apk-releaseS
