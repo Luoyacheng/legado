@@ -213,7 +213,7 @@ jobs:
           done
 
       - name: Upload Missing Rules File To Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: legado.${{ env.product }}.${{ env.type }}.mapping.missing_rules
           if-no-files-found: ignore
@@ -232,14 +232,14 @@ jobs:
           fi
 
       - name: Upload App To Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: legado.${{ env.product }}.${{ env.type }}
           if-no-files-found: ignore
           path: ${{ github.workspace }}/apk/*.apk
 
       - name: Upload Mapping File To Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: legado.${{ env.product }}.${{ env.type }}.mapping
           if-no-files-found: ignore
