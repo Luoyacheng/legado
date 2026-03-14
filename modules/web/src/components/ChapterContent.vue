@@ -37,7 +37,7 @@ const props = defineProps<{
 }>()
 
 const getImageSrc = (content: string) => {
-  const imgPattern = /<img[^>]*src="([^"]*(?:"[^>]+\})?)"[^>]*>/
+  const imgPattern = /<img[^>]*src="(.*?)"(?:\s[^>]*)?>/
   const src = content.match(imgPattern)![1] //reg tested in template
   if (isLegadoUrl(src))
     return API.getProxyImageUrl(
@@ -82,7 +82,7 @@ const handleImgLoadError = (event: Event) => {
 }
 
 const calculateWordCount = (paragraph: string) => {
-  const imgPattern = /<img[^>]*src="[^"]*(?:"[^>]+\})?"[^>]*>/g
+  const imgPattern = /<img[^>]*src="(.*?)"(?:\s[^>]*)?>/g
   //内嵌图片文字为1
   const imagePlaceHolder = ' '
   return paragraph.replace(imgPattern, imagePlaceHolder).length
