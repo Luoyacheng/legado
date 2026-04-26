@@ -2,9 +2,11 @@
 
 package io.legado.app.ui.main
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateUtils
-import android.view.MenuItem
+// ... 其他 importimport android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
