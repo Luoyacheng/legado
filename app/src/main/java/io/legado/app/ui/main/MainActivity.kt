@@ -1,9 +1,10 @@
 @file:Suppress("DEPRECATION")
 
 package io.legado.app.ui.main
-import android.view.MenuItem
+
 import android.os.Bundle
 import android.text.format.DateUtils
+import android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
@@ -21,6 +22,7 @@ import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.AppConst.appInfo
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
+import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.AppWebDav
@@ -28,11 +30,14 @@ import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.help.coroutine.Coroutine
+import io.legado.app.help.source.SourceHelp
 import io.legado.app.help.storage.Backup
+import io.legado.app.help.update.AppUpdate
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.about.CrashLogsDialog
+import io.legado.app.ui.about.UpdateDialog
 import io.legado.app.ui.association.ImportReplaceRuleDialog
 import io.legado.app.ui.association.ImportRssSourceDialog
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
@@ -43,6 +48,8 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.GSON
+import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
@@ -55,17 +62,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import splitties.views.bottomPadding
-import kotlin.coroutines.resume
-import io.legado.app.help.update.AppUpdate
-import io.legado.app.ui.about.UpdateDialog
-import kotlin.time.Duration.Companion.hours
-// 以下为新增导入
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import io.legado.app.utils.GSON
-import io.legado.app.help.source.SourceHelp
-import io.legado.app.data.entities.BookSource
+import splitties.views.bottomPadding
+import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.hours
+
 /**
  * 主界面
  */
@@ -207,98 +209,100 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             windowInsets.inset(0, 0, 0, height)
         }
     }
-private suspend fun upVersion() = suspendCancellableCoroutine sc@{ block ->
-    if (LocalConfig.versionCode == appInfo.versionCode) {
-        if (AppConfig.autoUpdateVariant) {
-            if (LocalConfig.lastCheckUpdate + 24.hours.inWholeMilliseconds < System.currentTimeMillis()) {
-                AppUpdate.giteeUpdate.check(lifecycleScope)
-                    .onSuccess {
-                        showDialogFragment(
-                            UpdateDialog(it)
-                        )
-                    }
-                LocalConfig.lastCheckUpdate = System.currentTimeMillis()
+
+    private suspend fun upVersion() = suspendCancellableCoroutine sc@{ block ->
+        if (LocalConfig.versionCode == appInfo.versionCode) {
+            if (AppConfig.autoUpdateVariant) {
+                if (LocalConfig.lastCheckUpdate + 24.hours.inWholeMilliseconds < System.currentTimeMillis()) {
+                    AppUpdate.giteeUpdate.check(lifecycleScope)
+                        .onSuccess {
+                            showDialogFragment(
+                                UpdateDialog(it)
+                            )
+                        }
+                    LocalConfig.lastCheckUpdate = System.currentTimeMillis()
+                }
             }
+            block.resume(null)
+            return@sc
         }
-        block.resume(null)
-        return@sc
-    }
-    LocalConfig.versionCode = appInfo.versionCode
-    if (LocalConfig.isFirstOpenApp) {
-        val help = String(assets.open("web/help/md/appHelp.md").readBytes())
-        val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
-        dialog.setOnDismissListener {
+        LocalConfig.versionCode = appInfo.versionCode
+        if (LocalConfig.isFirstOpenApp) {
+            val help = String(assets.open("web/help/md/appHelp.md").readBytes())
+            val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
+            dialog.setOnDismissListener {
+                block.resume(null)
+            }
+            showDialogFragment(dialog)
+        } else if (!BuildConfig.DEBUG) {
+            val log = String(assets.open("updateLog.md").readBytes())
+            val dialog = TextDialog(getString(R.string.update_log), log, TextDialog.Mode.MD)
+            dialog.setOnDismissListener {
+                block.resume(null)
+            }
+            showDialogFragment(dialog)
+        } else {
             block.resume(null)
         }
-        showDialogFragment(dialog)
-    } else if (!BuildConfig.DEBUG) {
-        val log = String(assets.open("updateLog.md").readBytes())
-        val dialog = TextDialog(getString(R.string.update_log), log, TextDialog.Mode.MD)
-        dialog.setOnDismissListener {
-            block.resume(null)
-        }
-        showDialogFragment(dialog)
-    } else {
-        block.resume(null)
     }
-}
 
     /**
- * 用户隐私与协议
- */
-private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ block ->
-    if (LocalConfig.privacyPolicyOk) {
-        block.resume(true)
-        return@sc
-    }
-    val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
-    alert(getString(R.string.privacy_policy), privacyPolicy) {
-        positiveButton(R.string.agree) {
-            LocalConfig.privacyPolicyOk = true
-            // ★ 新增这一行：同意后自动导入书源
-            autoImportBookSource()
+     * 用户隐私与协议
+     */
+    private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ block ->
+        if (LocalConfig.privacyPolicyOk) {
             block.resume(true)
+            return@sc
         }
-        negativeButton(R.string.refuse) {
-            finish()
-            block.resume(false)
+        val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
+        alert(getString(R.string.privacy_policy), privacyPolicy) {
+            positiveButton(R.string.agree) {
+                LocalConfig.privacyPolicyOk = true
+                // 静默导入网络书源
+                autoImportBookSource()
+                block.resume(true)
+            }
+            negativeButton(R.string.refuse) {
+                finish()
+                block.resume(false)
+            }
         }
     }
-}
-/**
- * 静默导入网络书源（无弹窗、无确认）
- */
-private fun autoImportBookSource() {
-    lifecycleScope.launch {
-        val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
-        withContext(Dispatchers.IO) {
-            try {
-                // 1. 下载 JSON
-                val client = OkHttpClient()
-                val request = Request.Builder().url(sourceUrl).build()
-                val response = client.newCall(request).execute()
-                val json = response.body?.string()
-                if (json.isNullOrEmpty()) return@withContext
 
-                // 2. 解析为 BookSource 列表
-                val sources = GSON.fromJsonArray<BookSource>(json).getOrNull()
-                if (sources.isNullOrEmpty()) return@withContext
+    /**
+     * 静默导入网络书源（无弹窗、无确认）
+     */
+    private fun autoImportBookSource() {
+        lifecycleScope.launch {
+            val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
+            withContext(Dispatchers.IO) {
+                try {
+                    val client = OkHttpClient()
+                    val request = Request.Builder().url(sourceUrl).build()
+                    val response = client.newCall(request).execute()
+                    val json = response.body?.string()
+                    if (json.isNullOrEmpty()) return@withContext
 
-                // 3. 静默插入数据库（无界面）
-                SourceHelp.insertBookSource(*sources.toTypedArray())
+                    // 使用 GSON 扩展函数解析 JSON 为 List<BookSource>
+                    val sources = GSON.fromJsonArray<BookSource>(json).getOrNull()
+                    if (sources.isNullOrEmpty()) return@withContext
 
-                withContext(Dispatchers.Main) {
-                    toastOnUi("已自动导入 ${sources.size} 个书源")
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    toastOnUi("导入失败: ${e.message}")
+                    // 静默插入数据库
+                    SourceHelp.insertBookSource(*sources.toTypedArray())
+
+                    withContext(Dispatchers.Main) {
+                        toastOnUi("已自动导入 ${sources.size} 个书源")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        toastOnUi("导入失败: ${e.message}")
+                    }
                 }
             }
         }
     }
-}
+
     /**
      * 设置本地密码
      */
@@ -348,7 +352,7 @@ private fun autoImportBookSource() {
         }
         lifecycleScope.launch {
             val lastBackupFile =
-                withContext(IO) { AppWebDav.lastBackUp().getOrNull() } ?: return@launch
+                withContext(Dispatchers.IO) { AppWebDav.lastBackUp().getOrNull() } ?: return@launch
             if (lastBackupFile.lastModify - LocalConfig.lastBackup > DateUtils.MINUTE_IN_MILLIS) {
                 LocalConfig.lastBackup = lastBackupFile.lastModify
                 alert(R.string.restore, R.string.webdav_after_local_restore_confirm) {
@@ -378,9 +382,6 @@ private fun autoImportBookSource() {
         }
     }
 
-    /**
-     * 如果重启太快fragment不会重建,这里更新一下书架的排序
-     */
     override fun recreate() {
         (fragmentMap[getFragmentId(0)] as? BaseBookshelfFragment)?.run {
             upSort()
@@ -519,10 +520,10 @@ private fun autoImportBookSource() {
 
     }
 
-    override fun openImportUi(type:Int, source: String) {
+    override fun openImportUi(type: Int, source: String) {
         when (type) {
             0 -> showDialogFragment(
-                ImportBookSourceDialog(source)
+                ImportReplaceRuleDialog(source)
             )
             1 -> showDialogFragment(
                 ImportRssSourceDialog(source)
@@ -532,5 +533,4 @@ private fun autoImportBookSource() {
             )
         }
     }
-
 }
