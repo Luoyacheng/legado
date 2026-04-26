@@ -1,7 +1,8 @@
 @file:Suppress("DEPRECATION")
 
 package io.legado.app.ui.main
-
+import io.legado.app.data.AppDatabase
+import io.legado.app.data.entities.BookSource
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -212,7 +213,41 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             windowInsets.inset(0, 0, 0, height)
         }
     }
-
+private suspend fun upVersion() = suspendCancellableCoroutine sc@{ block ->
+    if (LocalConfig.versionCode == appInfo.versionCode) {
+        if (AppConfig.autoUpdateVariant) {
+            if (LocalConfig.lastCheckUpdate + 24.hours.inWholeMilliseconds < System.currentTimeMillis()) {
+                AppUpdate.giteeUpdate.check(lifecycleScope)
+                    .onSuccess {
+                        showDialogFragment(
+                            UpdateDialog(it)
+                        )
+                    }
+                LocalConfig.lastCheckUpdate = System.currentTimeMillis()
+            }
+        }
+        block.resume(null)
+        return@sc
+    }
+    LocalConfig.versionCode = appInfo.versionCode
+    if (LocalConfig.isFirstOpenApp) {
+        val help = String(assets.open("web/help/md/appHelp.md").readBytes())
+        val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
+        dialog.setOnDismissListener {
+            block.resume(null)
+        }
+        showDialogFragment(dialog)
+    } else if (!BuildConfig.DEBUG) {
+        val log = String(assets.open("updateLog.md").readBytes())
+        val dialog = TextDialog(getString(R.string.update_log), log, TextDialog.Mode.MD)
+        dialog.setOnDismissListener {
+            block.resume(null)
+        }
+        showDialogFragment(dialog)
+    } else {
+        block.resume(null)
+    }
+}
     /**
  * 用户隐私与协议
  */
@@ -243,7 +278,6 @@ private fun autoImportBookSource() {
         val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
         withContext(Dispatchers.IO) {
             try {
-                // 1. 下载 JSON
                 val client = OkHttpClient()
                 val request = Request.Builder().url(sourceUrl).build()
                 val response = client.newCall(request).execute()
@@ -253,28 +287,21 @@ private fun autoImportBookSource() {
                     return@withContext
                 }
 
-                // 2. 解析 JSON 为 BookSource 列表
-                val type = object : TypeToken<List<io.legado.app.data.entities.BookSource>>() {}.type
-                val sources: List<io.legado.app.data.entities.BookSource> = GSON.fromJson(json, type)
+                val type = object : TypeToken<List<BookSource>>() {}.type
+                val sources: List<BookSource> = GSON.fromJson(json, type)
 
-                // 3. 插入数据库（去重）
-                val dao = appDb.bookSourceDao()  // 注意：不是 appDb.bookSourceDao，不需要括号
+                val db = AppDatabase.getInstance(this@MainActivity)
+                val dao = db.bookSourceDao()
                 var insertedCount = 0
                 for (source in sources) {
-                    // 检查是否已存在同名书源（按 bookSourceUrl 判断）
-                    val existing = dao.getBookSourceByUrl(source.bookSourceUrl)
+                    val existing = dao.getBookSource(source.bookSourceUrl)
                     if (existing == null) {
                         dao.insert(source)
                         insertedCount++
                     }
                 }
-
-                // 4. 提示成功（仅 Toast，不弹窗）
                 withContext(Dispatchers.Main) {
                     toastOnUi("已自动导入 $insertedCount 个新书源")
-                    // 发送事件刷新书源列表（如果当前在书源管理页面）
-                    // 使用项目中已有的事件总线（如果有需要）
-                    //LiveEventBus.post(EventBus.REFRESH_BOOK_SOURCE, "")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
