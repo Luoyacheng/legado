@@ -67,7 +67,6 @@ import io.legado.app.help.update.AppUpdate
 import io.legado.app.ui.about.UpdateDialog
 import kotlin.time.Duration.Companion.hours
 
-
 /**
  * 主界面
  */
@@ -510,4 +509,3 @@ private fun autoImportBookSource() {
     }
 
 }
-
