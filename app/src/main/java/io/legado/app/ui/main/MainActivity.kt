@@ -51,11 +51,14 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
+import io.legado.app.utils.putPrefString
+import io.legado.app.utils.removePref
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
@@ -68,6 +71,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import splitties.views.bottomPadding
+import java.io.File
+import java.io.FileOutputStream
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.hours
 
@@ -128,32 +133,25 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // 每次界面恢复时确保背景图片，对抗主题系统的颜色覆盖
-        ensureDefaultBackground()
-    }
-
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
-            // 隐私协议
+            //隐私协议
             if (!privacyPolicy()) return@launch
-
-            // 版本更新
+            //版本更新
             upVersion()
-            // 设置本地密码
+            //设置本地密码
             setLocalPassword()
             notifyAppCrash()
-            // 备份同步
+            //备份同步
             backupSync()
-            // 设置回调
+            //设置回调
             viewModel.setActivityCallback(this@MainActivity)
-            // 自动更新书源
+            //自动更新书源
             binding.viewPagerMain.postDelayed(1000) {
                 viewModel.ruleSubsUp()
             }
-            // 自动更新书籍
+            //自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
                 binding.viewPagerMain.postDelayed(2000) {
@@ -163,9 +161,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             binding.viewPagerMain.postDelayed(3000) {
                 viewModel.postLoad()
             }
-
-            // 初次启动也设置背景
-            ensureDefaultBackground()
         }
     }
 
@@ -273,6 +268,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
+                // 设置默认背景图片（通过主题系统，而不是直接设置View）
+                setupDefaultWallpaper()
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -314,55 +311,75 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
-    // ================= 默认背景图片相关方法 =================
+    // ================= 默认背景图片设置（通过Legado的主题系统） =================
 
     /**
-     * 判断是否已经设置过默认背景图片（防止重复覆盖用户主题）
+     * 将内置图片复制到应用外部存储，并设置为背景
+     * 对应 PreferKey.bgImage (日间) 和 PreferKey.bgImageN (夜间)
      */
-    private fun isDefaultBackgroundSet(): Boolean {
-        return getSharedPreferences("app_config", MODE_PRIVATE).getBoolean("default_bg_set", false)
-    }
-
-    /**
-     * 标记默认背景图片已设置
-     */
-    private fun markDefaultBackgroundSet() {
-        getSharedPreferences("app_config", MODE_PRIVATE).edit()
-            .putBoolean("default_bg_set", true).apply()
-    }
-
-    /**
-     * 根据当前日/夜间模式设置内置壁纸
-     * 图片均放在 res/drawable 下：bg_day.jpg 和 bg_night.jpg
-     */
-    private fun setDefaultBackgroundImage() {
-        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
-        val drawable = ContextCompat.getDrawable(this, bgRes)
-        // 设置根布局背景
-        binding.root.background = drawable
-        // 强制替换窗口背景，防止主题系统覆盖
-        window.setBackgroundDrawable(drawable)
-    }
-
-    /**
-     * 确保默认背景图片显示（适用于未导入自定义主题的情况）
-     */
-    private fun ensureDefaultBackground() {
-        try {
-            val configs = ThemeConfig.configList
-            val hasNoCustomTheme = configs.isEmpty() || configs.size <= 1
-            if (!isDefaultBackgroundSet() || hasNoCustomTheme) {
-                setDefaultBackgroundImage()
-                markDefaultBackgroundSet()
-                // 延迟二次设置，确保覆盖主题系统的后续操作
-                binding.root.postDelayed({
-                    setDefaultBackgroundImage()
-                }, 300)
+    private fun setupDefaultWallpaper() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val dayRes = R.drawable.bg_day
+                val nightRes = R.drawable.bg_night
+                val dayFile = copyDrawableToFile(dayRes, "bg_day.jpg")
+                val nightFile = copyDrawableToFile(nightRes, "bg_night.jpg")
+                withContext(Dispatchers.Main) {
+                    // 保存路径到SharedPreferences
+                    if (dayFile != null) {
+                        putPrefString(PreferKey.bgImage, dayFile.absolutePath)
+                    }
+                    if (nightFile != null) {
+                        putPrefString(PreferKey.bgImageN, nightFile.absolutePath)
+                    }
+                    // 应用主题（会读取上述偏好并设置背景）
+                    ThemeConfig.applyTheme(this@MainActivity)
+                    // 如果当前已经是夜间模式，需要确保启用
+                    if (AppConfig.isNightTheme) {
+                        ThemeConfig.applyNightTheme(this@MainActivity)
+                    }
+                    toastOnUi("已应用默认壁纸")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+        }
+    }
+
+    /**
+     * 将drawable资源复制到应用外部存储目录
+     * @return 生成的文件，失败返回null
+     */
+    private fun copyDrawableToFile(resId: Int, fileName: String): File? {
+        return try {
+            val drawable = ContextCompat.getDrawable(this, resId) ?: return null
+            val bitmap = drawableToBitmap(drawable) ?: return null
+            val dir = externalFiles
+            val file = FileUtils.createFileIfNotExist(dir, "wallpaper", fileName)
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
+            }
+            file
         } catch (e: Exception) {
             e.printStackTrace()
+            null
         }
+    }
+
+    /**
+     * Drawable 转 Bitmap
+     */
+    private fun drawableToBitmap(drawable: android.graphics.drawable.Drawable): android.graphics.Bitmap? {
+        if (drawable is android.graphics.drawable.BitmapDrawable) {
+            return drawable.bitmap
+        }
+        val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
+        val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
+        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
     }
 
     // ====================================================
