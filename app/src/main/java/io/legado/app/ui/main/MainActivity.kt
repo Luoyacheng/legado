@@ -4,7 +4,6 @@ package io.legado.app.ui.main
 
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -273,7 +272,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
-                // 自动设置内置壁纸（持久生效）
+                // 自动设置内置壁纸
                 setupBuiltInWallpaper()
                 block.resume(true)
             }
@@ -320,6 +319,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     /**
      * 自动设置内置壁纸（重启后仍然生效）
+     * 注意：不调用 applyNightTheme，因为不存在该方法。
      */
     private fun setupBuiltInWallpaper() {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -330,10 +330,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                     withContext(Dispatchers.Main) {
                         putPrefString(PreferKey.bgImage, dayFile.absolutePath)
                         putPrefString(PreferKey.bgImageN, nightFile.absolutePath)
+                        // 应用主题（会自动根据当前夜间模式读取对应的 bgImage 或 bgImageN）
                         ThemeConfig.applyTheme(this@MainActivity)
-                        if (AppConfig.isNightTheme) {
-                            ThemeConfig.applyNightTheme(this@MainActivity)
-                        }
                         toastOnUi("已应用内置壁纸")
                     }
                 } else {
