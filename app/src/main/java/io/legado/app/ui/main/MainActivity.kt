@@ -128,6 +128,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 每次界面恢复时确保背景图片，对抗主题系统的颜色覆盖
+        ensureDefaultBackground()
+    }
+
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
@@ -158,7 +164,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 viewModel.postLoad()
             }
 
-            // 新增：每次启动时检查并确保默认背景图片
+            // 初次启动也设置背景
             ensureDefaultBackground()
         }
     }
@@ -267,11 +273,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
-                // 设置默认背景图片（仅在首次启动且未设置过时生效）
-                if (!isDefaultBackgroundSet()) {
-                    setDefaultBackgroundImage()
-                    markDefaultBackgroundSet()
-                }
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -337,21 +338,27 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun setDefaultBackgroundImage() {
         val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
-        binding.root.background = ContextCompat.getDrawable(this, bgRes)
+        val drawable = ContextCompat.getDrawable(this, bgRes)
+        // 设置根布局背景
+        binding.root.background = drawable
+        // 强制替换窗口背景，防止主题系统覆盖
+        window.setBackgroundDrawable(drawable)
     }
 
     /**
      * 确保默认背景图片显示（适用于未导入自定义主题的情况）
-     * 每次启动都会调用，如果当前没有自定义主题，则强制设置图片背景
      */
     private fun ensureDefaultBackground() {
         try {
             val configs = ThemeConfig.configList
             val hasNoCustomTheme = configs.isEmpty() || configs.size <= 1
-            // 如果还没有设置过默认背景，或者当前没有自定义主题，则设置图片背景
             if (!isDefaultBackgroundSet() || hasNoCustomTheme) {
                 setDefaultBackgroundImage()
                 markDefaultBackgroundSet()
+                // 延迟二次设置，确保覆盖主题系统的后续操作
+                binding.root.postDelayed({
+                    setDefaultBackgroundImage()
+                }, 300)
             }
         } catch (e: Exception) {
             e.printStackTrace()
