@@ -24,7 +24,6 @@ import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.AppConst.appInfo
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
-import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
@@ -32,6 +31,7 @@ import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
+import io.legado.app.help.config.ThemeConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.source.SourceHelp
 import io.legado.app.help.storage.Backup
@@ -158,8 +158,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 viewModel.postLoad()
             }
 
-            // ★ 每次启动时检查并应用默认背景图片（若无自定义主题）
-            checkAndApplyDefaultBackground()
+            // ★ 添加默认壁纸主题（如果不存在用户自定义主题）
+            addDefaultWallpaperThemeIfNeeded()
         }
     }
 
@@ -267,7 +267,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
-                // 注意：背景图片将在 onPostCreate 的 checkAndApplyDefaultBackground 中统一处理
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -309,41 +308,54 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
-    // ================= 默认背景图片相关方法 =================
-
     /**
-     * 检查当前是否已有用户自定义主题，如果没有则设置默认背景图片
+     * 如果当前没有用户自定义主题，则添加一个包含内置图片的主题并应用
      */
-    private fun checkAndApplyDefaultBackground() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // 查询数据库中的主题数量
-                val allThemes = appDb.themeDao().getAll()
-                // 如果主题数量 ≤ 1（即只有默认主题或没有主题），则视为无用户自定义主题
-                val hasCustomTheme = allThemes.size > 1
-                if (!hasCustomTheme) {
-                    withContext(Dispatchers.Main) {
-                        setDefaultBackgroundImage()
+    private fun addDefaultWallpaperThemeIfNeeded() {
+        try {
+            val configs = ThemeConfig.configList
+            // 检查是否存在非默认主题。默认情况下，configList 可能为空或只有一个默认配置
+            if (configs.isEmpty() || configs.size <= 1) {
+                val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+                val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
+                val bgUri = "android.resource://${packageName}/${bgRes}"
+                // 获取当前有效主题的颜色（如果没有则使用默认值）
+                val current = configs.firstOrNull()
+                val primary = current?.primary ?: "#FF6200EE"
+                val accent = current?.accent ?: "#FF03DAC5"
+                val background = current?.background ?: "#FFFFFF"
+                val bottomBackground = current?.bottomBackground ?: "#F5F5F5"
+                val themeJson = """
+                    {
+                        "themeName": "默认壁纸",
+                        "primary": "$primary",
+                        "accent": "$accent",
+                        "background": "$background",
+                        "backgroundImage": "$bgUri",
+                        "bottomBackground": "$bottomBackground",
+                        "transparentNavigationBar": false,
+                        "isDark": $isNight
+                    }
+                """.trimIndent()
+                if (ThemeConfig.addConfig(themeJson)) {
+                    // 导入成功，最后一条配置就是新添加的
+                    val newConfig = ThemeConfig.configList.last()
+                    ThemeConfig.applyConfig(this, newConfig)
+                } else {
+                    // 如果 JSON 格式不匹配，尝试修改当前主题的背景图片
+                    val firstConfig = configs.firstOrNull()
+                    if (firstConfig != null && firstConfig.backgroundImage.isNullOrEmpty()) {
+                        firstConfig.backgroundImage = bgUri
+                        val updatedJson = GSON.toJson(firstConfig)
+                        ThemeConfig.addConfig(updatedJson)
+                        ThemeConfig.applyConfig(this, firstConfig)
                     }
                 }
-            } catch (e: Exception) {
-                // 如果查询失败（例如数据库尚未初始化），则静默失败，不影响启动
-                e.printStackTrace()
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
-
-    /**
-     * 根据当前日/夜间模式设置内置壁纸
-     * 需要预先在 res/drawable 放入 bg_day.jpg，在 res/drawable-night 放入 bg_night.jpg
-     */
-    private fun setDefaultBackgroundImage() {
-        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
-        binding.root.background = ContextCompat.getDrawable(this, bgRes)
-    }
-
-    // ====================================================
 
     /**
      * 设置本地密码
