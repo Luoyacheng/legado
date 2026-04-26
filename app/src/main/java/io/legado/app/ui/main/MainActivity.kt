@@ -131,23 +131,22 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
-            // 隐私协议
+            //隐私协议
             if (!privacyPolicy()) return@launch
-
-            // 版本更新
+            //版本更新
             upVersion()
-            // 设置本地密码
+            //设置本地密码
             setLocalPassword()
             notifyAppCrash()
-            // 备份同步
+            //备份同步
             backupSync()
-            // 设置回调
+            //设置回调
             viewModel.setActivityCallback(this@MainActivity)
-            // 自动更新书源
+            //自动更新书源
             binding.viewPagerMain.postDelayed(1000) {
                 viewModel.ruleSubsUp()
             }
-            // 自动更新书籍
+            //自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
                 binding.viewPagerMain.postDelayed(2000) {
@@ -158,8 +157,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 viewModel.postLoad()
             }
 
-            // 添加默认壁纸主题（如果不存在用户自定义主题）
-            addDefaultWallpaperThemeIfNeeded()
+            // 检查并应用默认背景图片
+            applyDefaultBackgroundIfNeeded()
         }
     }
 
@@ -309,37 +308,16 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     }
 
     /**
-     * 如果当前没有用户自定义主题，则添加一个包含内置图片的主题并应用
+     * 如果用户尚未导入任何自定义主题，则设置默认背景图片
      */
-    private fun addDefaultWallpaperThemeIfNeeded() {
+    private fun applyDefaultBackgroundIfNeeded() {
         try {
             val configs = ThemeConfig.configList
+            // 如果主题列表为空或只有默认主题（即用户没有导入任何自定义主题）
             if (configs.isEmpty() || configs.size <= 1) {
                 val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
                 val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
-                val bgUri = "android.resource://${packageName}/${bgRes}"
-                // 使用固定的默认颜色值
-                val themeJson = """
-                    {
-                        "themeName": "默认壁纸",
-                        "primary": "#FF6200EE",
-                        "accent": "#FF03DAC5",
-                        "background": "#FFFFFF",
-                        "backgroundImage": "$bgUri",
-                        "bottomBackground": "#F5F5F5",
-                        "transparentNavigationBar": false,
-                        "isDark": $isNight
-                    }
-                """.trimIndent()
-                if (ThemeConfig.addConfig(themeJson)) {
-                    val newConfig = ThemeConfig.configList.last()
-                    ThemeConfig.applyConfig(this, newConfig)
-                } else {
-                    // 后备方案：直接设置根布局背景
-                    runOnUiThread {
-                        binding.root.background = ContextCompat.getDrawable(this, bgRes)
-                    }
-                }
+                binding.root.background = ContextCompat.getDrawable(this, bgRes)
             }
         } catch (e: Exception) {
             e.printStackTrace()
