@@ -1,13 +1,12 @@
 @file:Suppress("DEPRECATION")
 
 package io.legado.app.ui.main
+
 import android.content.Intent
 import android.net.Uri
-import android.view.MenuItem
 import android.os.Bundle
-// ... 其他 import
+import android.view.MenuItem
 import android.text.format.DateUtils
-// ... 其他 importimport android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
@@ -19,6 +18,7 @@ import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.gson.reflect.TypeToken
 import io.legado.app.BuildConfig
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
@@ -56,16 +56,20 @@ import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import splitties.views.bottomPadding
 import kotlin.coroutines.resume
-import androidx.core.view.get
 import io.legado.app.help.update.AppUpdate
 import io.legado.app.ui.about.UpdateDialog
 import kotlin.time.Duration.Companion.hours
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import io.legado.app.data.appDb
+import io.legado.app.utils.GSON
+import io.legado.app.utils.postEvent
 
 /**
  * 主界面
@@ -232,53 +236,54 @@ private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ 
     }
 }
 /**
- * 自动导入网络书源
+ * 静默导入网络书源（无弹窗、无确认）
  */
 private fun autoImportBookSource() {
-    val bookSourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("legado://import/bookSource?src=$bookSourceUrl"))
-    startActivity(intent)
-}
+    lifecycleScope.launch {
+        val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
+        withContext(Dispatchers.IO) {
+            try {
+                // 1. 下载 JSON
+                val client = okhttp3.OkHttpClient()
+                val request = okhttp3.Request.Builder().url(sourceUrl).build()
+                val response = client.newCall(request).execute()
+                val json = response.body?.string()
+                if (json.isNullOrEmpty()) {
+                    withContext(Dispatchers.Main) { toastOnUi("书源下载失败") }
+                    return@withContext
+                }
 
-    /**
-     * 版本更新日志
-     */
-    private suspend fun upVersion() = suspendCancellableCoroutine sc@{ block ->
-        if (LocalConfig.versionCode == appInfo.versionCode) {
-            if (AppConfig.autoUpdateVariant) {
-                if (LocalConfig.lastCheckUpdate + 24.hours.inWholeMilliseconds < System.currentTimeMillis()) {
-                    AppUpdate.giteeUpdate.check(lifecycleScope)
-                        .onSuccess {
-                            showDialogFragment(
-                                UpdateDialog(it)
-                            )
-                        }
-                    LocalConfig.lastCheckUpdate = System.currentTimeMillis()
+                // 2. 解析 JSON 为 BookSource 列表
+                val type = object : com.google.gson.reflect.TypeToken<List<io.legado.app.data.entities.BookSource>>() {}.type
+                val sources: List<io.legado.app.data.entities.BookSource> = io.legado.app.utils.GSON.fromJson(json, type)
+
+                // 3. 插入数据库（去重）
+                val dao = io.legado.app.data.appDb.bookSourceDao()
+                var insertedCount = 0
+                for (source in sources) {
+                    val existing = dao.getBookSource(source.bookSourceUrl)
+                    if (existing == null) {
+                        source.serialize()  // 将规则等字段序列化
+                        dao.insert(source)
+                        insertedCount++
+                    }
+                }
+
+                // 4. 提示成功（可选，仅 Toast，不弹窗）
+                withContext(Dispatchers.Main) {
+                    toastOnUi("已自动导入 $insertedCount 个新书源")
+                    // 刷新书源列表界面（如果当前在书源管理页面）
+                    io.legado.app.utils.postEvent("refreshBookSource")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    toastOnUi("书源导入失败: ${e.message}")
                 }
             }
-            block.resume(null)
-            return@sc
-        }
-        LocalConfig.versionCode = appInfo.versionCode
-        if (LocalConfig.isFirstOpenApp) {
-            val help = String(assets.open("web/help/md/appHelp.md").readBytes())
-            val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
-            dialog.setOnDismissListener {
-                block.resume(null)
-            }
-            showDialogFragment(dialog)
-        } else if (!BuildConfig.DEBUG) {
-            val log = String(assets.open("updateLog.md").readBytes())
-            val dialog = TextDialog(getString(R.string.update_log), log, TextDialog.Mode.MD)
-            dialog.setOnDismissListener {
-                block.resume(null)
-            }
-            showDialogFragment(dialog)
-        } else {
-            block.resume(null)
         }
     }
-
+}
     /**
      * 设置本地密码
      */
