@@ -131,22 +131,23 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
-            //隐私协议
+            // 隐私协议
             if (!privacyPolicy()) return@launch
-            //版本更新
+
+            // 版本更新
             upVersion()
-            //设置本地密码
+            // 设置本地密码
             setLocalPassword()
             notifyAppCrash()
-            //备份同步
+            // 备份同步
             backupSync()
-            //设置回调
+            // 设置回调
             viewModel.setActivityCallback(this@MainActivity)
-            //自动更新书源
+            // 自动更新书源
             binding.viewPagerMain.postDelayed(1000) {
                 viewModel.ruleSubsUp()
             }
-            //自动更新书籍
+            // 自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
                 binding.viewPagerMain.postDelayed(2000) {
@@ -157,8 +158,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 viewModel.postLoad()
             }
 
-            // 检查并应用默认背景图片
-            applyDefaultBackgroundIfNeeded()
+            // 新增：每次启动时检查并确保默认背景图片
+            ensureDefaultBackground()
         }
     }
 
@@ -266,6 +267,11 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
+                // 设置默认背景图片（仅在首次启动且未设置过时生效）
+                if (!isDefaultBackgroundSet()) {
+                    setDefaultBackgroundImage()
+                    markDefaultBackgroundSet()
+                }
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -307,22 +313,52 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
+    // ================= 默认背景图片相关方法 =================
+
     /**
-     * 如果用户尚未导入任何自定义主题，则设置默认背景图片
+     * 判断是否已经设置过默认背景图片（防止重复覆盖用户主题）
      */
-    private fun applyDefaultBackgroundIfNeeded() {
+    private fun isDefaultBackgroundSet(): Boolean {
+        return getSharedPreferences("app_config", MODE_PRIVATE).getBoolean("default_bg_set", false)
+    }
+
+    /**
+     * 标记默认背景图片已设置
+     */
+    private fun markDefaultBackgroundSet() {
+        getSharedPreferences("app_config", MODE_PRIVATE).edit()
+            .putBoolean("default_bg_set", true).apply()
+    }
+
+    /**
+     * 根据当前日/夜间模式设置内置壁纸
+     * 图片均放在 res/drawable 下：bg_day.jpg 和 bg_night.jpg
+     */
+    private fun setDefaultBackgroundImage() {
+        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
+        binding.root.background = ContextCompat.getDrawable(this, bgRes)
+    }
+
+    /**
+     * 确保默认背景图片显示（适用于未导入自定义主题的情况）
+     * 每次启动都会调用，如果当前没有自定义主题，则强制设置图片背景
+     */
+    private fun ensureDefaultBackground() {
         try {
             val configs = ThemeConfig.configList
-            // 如果主题列表为空或只有默认主题（即用户没有导入任何自定义主题）
-            if (configs.isEmpty() || configs.size <= 1) {
-                val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-                val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
-                binding.root.background = ContextCompat.getDrawable(this, bgRes)
+            val hasNoCustomTheme = configs.isEmpty() || configs.size <= 1
+            // 如果还没有设置过默认背景，或者当前没有自定义主题，则设置图片背景
+            if (!isDefaultBackgroundSet() || hasNoCustomTheme) {
+                setDefaultBackgroundImage()
+                markDefaultBackgroundSet()
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
+
+    // ====================================================
 
     /**
      * 设置本地密码
