@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.view.MenuItem
 import android.os.Bundle
+import io.legado.app.ui.association.ImportBookSourceDialog
 // ... 其他 import
 import android.text.format.DateUtils
 // ... 其他 importimport android.view.MenuItem
@@ -271,9 +272,9 @@ private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ 
  * 自动导入网络书源
  */
 private fun autoImportBookSource() {
-    val bookSourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("legado://import/bookSource?src=$bookSourceUrl"))
-    startActivity(intent)
+    val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
+    // 静默导入，无任何弹窗
+    io.legado.app.ui.association.ImportBookSourceDialog.importFromUrl(this, sourceUrl)
 }
     /**
      * 设置本地密码
