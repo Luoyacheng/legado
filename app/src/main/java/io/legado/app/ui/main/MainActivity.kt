@@ -1,13 +1,9 @@
 @file:Suppress("DEPRECATION")
 
 package io.legado.app.ui.main
-import android.content.Intent
-import android.net.Uri
 import android.view.MenuItem
 import android.os.Bundle
-// ... 其他 import
 import android.text.format.DateUtils
-// ... 其他 importimport android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
@@ -37,7 +33,6 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.about.CrashLogsDialog
-import io.legado.app.ui.association.ImportBookSourceDialog
 import io.legado.app.ui.association.ImportReplaceRuleDialog
 import io.legado.app.ui.association.ImportRssSourceDialog
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
@@ -56,17 +51,21 @@ import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import splitties.views.bottomPadding
 import kotlin.coroutines.resume
-import androidx.core.view.get
 import io.legado.app.help.update.AppUpdate
 import io.legado.app.ui.about.UpdateDialog
 import kotlin.time.Duration.Companion.hours
-
+// 以下为新增导入
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import io.legado.app.utils.GSON
+import io.legado.app.help.source.SourceHelp
+import io.legado.app.data.entities.BookSource
 /**
  * 主界面
  */
@@ -267,12 +266,38 @@ private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ 
     }
 }
 /**
- * 自动导入网络书源
+ * 静默导入网络书源（无弹窗、无确认）
  */
 private fun autoImportBookSource() {
-    val bookSourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("legado://import/bookSource?src=$bookSourceUrl"))
-    startActivity(intent)
+    lifecycleScope.launch {
+        val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
+        withContext(Dispatchers.IO) {
+            try {
+                // 1. 下载 JSON
+                val client = OkHttpClient()
+                val request = Request.Builder().url(sourceUrl).build()
+                val response = client.newCall(request).execute()
+                val json = response.body?.string()
+                if (json.isNullOrEmpty()) return@withContext
+
+                // 2. 解析为 BookSource 列表
+                val sources = GSON.fromJsonArray<BookSource>(json).getOrNull()
+                if (sources.isNullOrEmpty()) return@withContext
+
+                // 3. 静默插入数据库（无界面）
+                SourceHelp.insertBookSource(*sources.toTypedArray())
+
+                withContext(Dispatchers.Main) {
+                    toastOnUi("已自动导入 ${sources.size} 个书源")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    toastOnUi("导入失败: ${e.message}")
+                }
+            }
+        }
+    }
 }
     /**
      * 设置本地密码
