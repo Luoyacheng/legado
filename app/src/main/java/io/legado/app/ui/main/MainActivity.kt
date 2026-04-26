@@ -2,12 +2,14 @@
 
 package io.legado.app.ui.main
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.core.view.get
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
@@ -128,22 +130,23 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
-            //隐私协议
+            // 隐私协议
             if (!privacyPolicy()) return@launch
-            //版本更新
+
+            // 版本更新
             upVersion()
-            //设置本地密码
+            // 设置本地密码
             setLocalPassword()
             notifyAppCrash()
-            //备份同步
+            // 备份同步
             backupSync()
-            //设置回调
+            // 设置回调
             viewModel.setActivityCallback(this@MainActivity)
-            //自动更新书源
+            // 自动更新书源
             binding.viewPagerMain.postDelayed(1000) {
                 viewModel.ruleSubsUp()
             }
-            //自动更新书籍
+            // 自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
                 binding.viewPagerMain.postDelayed(2000) {
@@ -260,6 +263,11 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
+                // 设置默认背景图片（仅在首次启动且未设置过时生效）
+                if (!isDefaultBackgroundSet()) {
+                    setDefaultBackgroundImage()
+                    markDefaultBackgroundSet()
+                }
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -283,11 +291,9 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                     val json = response.body?.string()
                     if (json.isNullOrEmpty()) return@withContext
 
-                    // 使用 GSON 扩展函数解析 JSON 为 List<BookSource>
                     val sources = GSON.fromJsonArray<BookSource>(json).getOrNull()
                     if (sources.isNullOrEmpty()) return@withContext
 
-                    // 静默插入数据库
                     SourceHelp.insertBookSource(*sources.toTypedArray())
 
                     withContext(Dispatchers.Main) {
@@ -302,6 +308,35 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             }
         }
     }
+
+    // ================= 默认背景图片相关方法 =================
+
+    /**
+     * 判断是否已经设置过默认背景图片（防止重复覆盖用户主题）
+     */
+    private fun isDefaultBackgroundSet(): Boolean {
+        return getSharedPreferences("app_config", MODE_PRIVATE).getBoolean("default_bg_set", false)
+    }
+
+    /**
+     * 标记默认背景图片已设置
+     */
+    private fun markDefaultBackgroundSet() {
+        getSharedPreferences("app_config", MODE_PRIVATE).edit()
+            .putBoolean("default_bg_set", true).apply()
+    }
+
+    /**
+     * 根据当前日/夜间模式设置内置壁纸
+     * 需要预先在 res/drawable 放入 bg_day.jpg，在 res/drawable-night 放入 bg_night.jpg
+     */
+    private fun setDefaultBackgroundImage() {
+        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
+        binding.root.background = ContextCompat.getDrawable(this, bgRes)
+    }
+
+    // ====================================================
 
     /**
      * 设置本地密码
