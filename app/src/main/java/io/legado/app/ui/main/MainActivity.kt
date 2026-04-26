@@ -244,8 +244,8 @@ private fun autoImportBookSource() {
         withContext(Dispatchers.IO) {
             try {
                 // 1. 下载 JSON
-                val client = okhttp3.OkHttpClient()
-                val request = okhttp3.Request.Builder().url(sourceUrl).build()
+                val client = OkHttpClient()
+                val request = Request.Builder().url(sourceUrl).build()
                 val response = client.newCall(request).execute()
                 val json = response.body?.string()
                 if (json.isNullOrEmpty()) {
@@ -254,26 +254,27 @@ private fun autoImportBookSource() {
                 }
 
                 // 2. 解析 JSON 为 BookSource 列表
-                val type = object : com.google.gson.reflect.TypeToken<List<io.legado.app.data.entities.BookSource>>() {}.type
-                val sources: List<io.legado.app.data.entities.BookSource> = io.legado.app.utils.GSON.fromJson(json, type)
+                val type = object : TypeToken<List<io.legado.app.data.entities.BookSource>>() {}.type
+                val sources: List<io.legado.app.data.entities.BookSource> = GSON.fromJson(json, type)
 
                 // 3. 插入数据库（去重）
-                val dao = io.legado.app.data.appDb.bookSourceDao()
+                val dao = appDb.bookSourceDao()  // 注意：不是 appDb.bookSourceDao，不需要括号
                 var insertedCount = 0
                 for (source in sources) {
-                    val existing = dao.getBookSource(source.bookSourceUrl)
+                    // 检查是否已存在同名书源（按 bookSourceUrl 判断）
+                    val existing = dao.getBookSourceByUrl(source.bookSourceUrl)
                     if (existing == null) {
-                        source.serialize()  // 将规则等字段序列化
                         dao.insert(source)
                         insertedCount++
                     }
                 }
 
-                // 4. 提示成功（可选，仅 Toast，不弹窗）
+                // 4. 提示成功（仅 Toast，不弹窗）
                 withContext(Dispatchers.Main) {
                     toastOnUi("已自动导入 $insertedCount 个新书源")
-                    // 刷新书源列表界面（如果当前在书源管理页面）
-                    io.legado.app.utils.postEvent("refreshBookSource")
+                    // 发送事件刷新书源列表（如果当前在书源管理页面）
+                    // 使用项目中已有的事件总线（如果有需要）
+                    //LiveEventBus.post(EventBus.REFRESH_BOOK_SOURCE, "")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
