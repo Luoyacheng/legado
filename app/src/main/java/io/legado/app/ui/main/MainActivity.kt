@@ -24,6 +24,7 @@ import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.AppConst.appInfo
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
+import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
@@ -156,6 +157,9 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             binding.viewPagerMain.postDelayed(3000) {
                 viewModel.postLoad()
             }
+
+            // ★ 每次启动时检查并应用默认背景图片（若无自定义主题）
+            checkAndApplyDefaultBackground()
         }
     }
 
@@ -263,11 +267,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
-                // 设置默认背景图片（仅在首次启动且未设置过时生效）
-                if (!isDefaultBackgroundSet()) {
-                    setDefaultBackgroundImage()
-                    markDefaultBackgroundSet()
-                }
+                // 注意：背景图片将在 onPostCreate 的 checkAndApplyDefaultBackground 中统一处理
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -312,18 +312,25 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     // ================= 默认背景图片相关方法 =================
 
     /**
-     * 判断是否已经设置过默认背景图片（防止重复覆盖用户主题）
+     * 检查当前是否已有用户自定义主题，如果没有则设置默认背景图片
      */
-    private fun isDefaultBackgroundSet(): Boolean {
-        return getSharedPreferences("app_config", MODE_PRIVATE).getBoolean("default_bg_set", false)
-    }
-
-    /**
-     * 标记默认背景图片已设置
-     */
-    private fun markDefaultBackgroundSet() {
-        getSharedPreferences("app_config", MODE_PRIVATE).edit()
-            .putBoolean("default_bg_set", true).apply()
+    private fun checkAndApplyDefaultBackground() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // 查询数据库中的主题数量
+                val allThemes = appDb.themeDao().getAll()
+                // 如果主题数量 ≤ 1（即只有默认主题或没有主题），则视为无用户自定义主题
+                val hasCustomTheme = allThemes.size > 1
+                if (!hasCustomTheme) {
+                    withContext(Dispatchers.Main) {
+                        setDefaultBackgroundImage()
+                    }
+                }
+            } catch (e: Exception) {
+                // 如果查询失败（例如数据库尚未初始化），则静默失败，不影响启动
+                e.printStackTrace()
+            }
+        }
     }
 
     /**
