@@ -3,12 +3,18 @@
 package io.legado.app.ui.main
 
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
 import androidx.core.view.postDelayed
@@ -51,14 +57,12 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
-import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.putPrefString
-import io.legado.app.utils.removePref
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
@@ -136,22 +140,23 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         lifecycleScope.launch {
-            //隐私协议
+            // 隐私协议
             if (!privacyPolicy()) return@launch
-            //版本更新
+
+            // 版本更新
             upVersion()
-            //设置本地密码
+            // 设置本地密码
             setLocalPassword()
             notifyAppCrash()
-            //备份同步
+            // 备份同步
             backupSync()
-            //设置回调
+            // 设置回调
             viewModel.setActivityCallback(this@MainActivity)
-            //自动更新书源
+            // 自动更新书源
             binding.viewPagerMain.postDelayed(1000) {
                 viewModel.ruleSubsUp()
             }
-            //自动更新书籍
+            // 自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
                 binding.viewPagerMain.postDelayed(2000) {
@@ -268,8 +273,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 LocalConfig.privacyPolicyOk = true
                 // 静默导入网络书源
                 autoImportBookSource()
-                // 设置默认背景图片（通过主题系统，而不是直接设置View）
-                setupDefaultWallpaper()
+                // 自动设置内置壁纸（持久生效）
+                setupBuiltInWallpaper()
                 block.resume(true)
             }
             negativeButton(R.string.refuse) {
@@ -311,53 +316,49 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
     }
 
-    // ================= 默认背景图片设置（通过Legado的主题系统） =================
+    // ================= 自动设置内置壁纸（持久生效） =================
 
     /**
-     * 将内置图片复制到应用外部存储，并设置为背景
-     * 对应 PreferKey.bgImage (日间) 和 PreferKey.bgImageN (夜间)
+     * 自动设置内置壁纸（重启后仍然生效）
      */
-    private fun setupDefaultWallpaper() {
+    private fun setupBuiltInWallpaper() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val dayRes = R.drawable.bg_day
-                val nightRes = R.drawable.bg_night
-                val dayFile = copyDrawableToFile(dayRes, "bg_day.jpg")
-                val nightFile = copyDrawableToFile(nightRes, "bg_night.jpg")
-                withContext(Dispatchers.Main) {
-                    // 保存路径到SharedPreferences
-                    if (dayFile != null) {
+                val dayFile = saveDrawableToFile(R.drawable.bg_day, "bg_day.jpg")
+                val nightFile = saveDrawableToFile(R.drawable.bg_night, "bg_night.jpg")
+                if (dayFile != null && nightFile != null) {
+                    withContext(Dispatchers.Main) {
                         putPrefString(PreferKey.bgImage, dayFile.absolutePath)
-                    }
-                    if (nightFile != null) {
                         putPrefString(PreferKey.bgImageN, nightFile.absolutePath)
+                        ThemeConfig.applyTheme(this@MainActivity)
+                        if (AppConfig.isNightTheme) {
+                            ThemeConfig.applyNightTheme(this@MainActivity)
+                        }
+                        toastOnUi("已应用内置壁纸")
                     }
-                    // 应用主题（会读取上述偏好并设置背景）
-                    ThemeConfig.applyTheme(this@MainActivity)
-                    // 如果当前已经是夜间模式，需要确保启用
-                    if (AppConfig.isNightTheme) {
-                        ThemeConfig.applyNightTheme(this@MainActivity)
-                    }
-                    toastOnUi("已应用默认壁纸")
+                } else {
+                    toastOnUi("壁纸文件保存失败")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                toastOnUi("壁纸设置失败: ${e.message}")
             }
         }
     }
 
     /**
-     * 将drawable资源复制到应用外部存储目录
-     * @return 生成的文件，失败返回null
+     * 将 drawable 资源保存为文件
      */
-    private fun copyDrawableToFile(resId: Int, fileName: String): File? {
+    private fun saveDrawableToFile(@DrawableRes resId: Int, fileName: String): File? {
         return try {
             val drawable = ContextCompat.getDrawable(this, resId) ?: return null
             val bitmap = drawableToBitmap(drawable) ?: return null
-            val dir = externalFiles
-            val file = FileUtils.createFileIfNotExist(dir, "wallpaper", fileName)
+            val dir = getExternalFilesDir(null) ?: return null
+            val fontDir = File(dir, "font")
+            if (!fontDir.exists()) fontDir.mkdirs()
+            val file = File(fontDir, fileName)
             FileOutputStream(file).use { outputStream ->
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
             }
             file
         } catch (e: Exception) {
@@ -369,14 +370,14 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     /**
      * Drawable 转 Bitmap
      */
-    private fun drawableToBitmap(drawable: android.graphics.drawable.Drawable): android.graphics.Bitmap? {
-        if (drawable is android.graphics.drawable.BitmapDrawable) {
+    private fun drawableToBitmap(drawable: Drawable): Bitmap? {
+        if (drawable is BitmapDrawable) {
             return drawable.bitmap
         }
         val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
         val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
-        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(bitmap)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, canvas.width, canvas.height)
         drawable.draw(canvas)
         return bitmap
