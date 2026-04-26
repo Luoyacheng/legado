@@ -278,6 +278,7 @@ private fun autoImportBookSource() {
         val sourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
         withContext(Dispatchers.IO) {
             try {
+                // 1. 下载 JSON
                 val client = OkHttpClient()
                 val request = Request.Builder().url(sourceUrl).build()
                 val response = client.newCall(request).execute()
@@ -287,10 +288,12 @@ private fun autoImportBookSource() {
                     return@withContext
                 }
 
+                // 2. 解析 JSON 为 BookSource 列表
                 val type = object : TypeToken<List<BookSource>>() {}.type
                 val sources: List<BookSource> = GSON.fromJson(json, type)
 
-                val db = AppDatabase.getInstance(this@MainActivity)
+                // 3. 关键：使用 applicationContext 获取数据库
+                val db = AppDatabase.getInstance(applicationContext)
                 val dao = db.bookSourceDao()
                 var insertedCount = 0
                 for (source in sources) {
