@@ -158,7 +158,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 viewModel.postLoad()
             }
 
-            // ★ 添加默认壁纸主题（如果不存在用户自定义主题）
+            // 添加默认壁纸主题（如果不存在用户自定义主题）
             addDefaultWallpaperThemeIfNeeded()
         }
     }
@@ -314,41 +314,30 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun addDefaultWallpaperThemeIfNeeded() {
         try {
             val configs = ThemeConfig.configList
-            // 检查是否存在非默认主题。默认情况下，configList 可能为空或只有一个默认配置
             if (configs.isEmpty() || configs.size <= 1) {
                 val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
                 val bgRes = if (isNight) R.drawable.bg_night else R.drawable.bg_day
                 val bgUri = "android.resource://${packageName}/${bgRes}"
-                // 获取当前有效主题的颜色（如果没有则使用默认值）
-                val current = configs.firstOrNull()
-                val primary = current?.primary ?: "#FF6200EE"
-                val accent = current?.accent ?: "#FF03DAC5"
-                val background = current?.background ?: "#FFFFFF"
-                val bottomBackground = current?.bottomBackground ?: "#F5F5F5"
+                // 使用固定的默认颜色值
                 val themeJson = """
                     {
                         "themeName": "默认壁纸",
-                        "primary": "$primary",
-                        "accent": "$accent",
-                        "background": "$background",
+                        "primary": "#FF6200EE",
+                        "accent": "#FF03DAC5",
+                        "background": "#FFFFFF",
                         "backgroundImage": "$bgUri",
-                        "bottomBackground": "$bottomBackground",
+                        "bottomBackground": "#F5F5F5",
                         "transparentNavigationBar": false,
                         "isDark": $isNight
                     }
                 """.trimIndent()
                 if (ThemeConfig.addConfig(themeJson)) {
-                    // 导入成功，最后一条配置就是新添加的
                     val newConfig = ThemeConfig.configList.last()
                     ThemeConfig.applyConfig(this, newConfig)
                 } else {
-                    // 如果 JSON 格式不匹配，尝试修改当前主题的背景图片
-                    val firstConfig = configs.firstOrNull()
-                    if (firstConfig != null && firstConfig.backgroundImage.isNullOrEmpty()) {
-                        firstConfig.backgroundImage = bgUri
-                        val updatedJson = GSON.toJson(firstConfig)
-                        ThemeConfig.addConfig(updatedJson)
-                        ThemeConfig.applyConfig(this, firstConfig)
+                    // 后备方案：直接设置根布局背景
+                    runOnUiThread {
+                        binding.root.background = ContextCompat.getDrawable(this, bgRes)
                     }
                 }
             }
