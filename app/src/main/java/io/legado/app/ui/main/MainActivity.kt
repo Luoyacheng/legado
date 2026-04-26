@@ -207,25 +207,35 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     }
 
     /**
-     * 用户隐私与协议
-     */
-    private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ block ->
-        if (LocalConfig.privacyPolicyOk) {
+ * 用户隐私与协议
+ */
+private suspend fun privacyPolicy(): Boolean = suspendCancellableCoroutine sc@{ block ->
+    if (LocalConfig.privacyPolicyOk) {
+        block.resume(true)
+        return@sc
+    }
+    val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
+    alert(getString(R.string.privacy_policy), privacyPolicy) {
+        positiveButton(R.string.agree) {
+            LocalConfig.privacyPolicyOk = true
+            // ★ 新增这一行：同意后自动导入书源
+            autoImportBookSource()
             block.resume(true)
-            return@sc
         }
-        val privacyPolicy = String(assets.open("privacyPolicy.md").readBytes())
-        alert(getString(R.string.privacy_policy), privacyPolicy) {
-            positiveButton(R.string.agree) {
-                LocalConfig.privacyPolicyOk = true
-                block.resume(true)
-            }
-            negativeButton(R.string.refuse) {
-                finish()
-                block.resume(false)
-            }
+        negativeButton(R.string.refuse) {
+            finish()
+            block.resume(false)
         }
     }
+}
+/**
+ * 自动导入网络书源
+ */
+private fun autoImportBookSource() {
+    val bookSourceUrl = "http://qsdkkrv627.hk001.n-u.top/BookSource.json"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("legado://import/bookSource?src=$bookSourceUrl"))
+    startActivity(intent)
+}
 
     /**
      * 版本更新日志
