@@ -21,14 +21,19 @@ object DocumentUtils {
         vararg subDirs: String
     ): DocumentFile? {
         val parent: DocumentFile? = createFolderIfNotExist(root, *subDirs)
-        return parent?.findFile(fileName) ?: parent?.createFile("", fileName)
+        return parent?.findFile(fileName) ?: parent?.createFile(FileUtils.getMimeType(fileName), fileName)
     }
 
     fun createFolderIfNotExist(root: DocumentFile, vararg subDirs: String): DocumentFile? {
         var parent: DocumentFile? = root
         for (subDirName in subDirs) {
-            val subDir = parent?.findFile(subDirName)
-                ?: parent?.createDirectory(subDirName)
+            val existing = parent?.findFile(subDirName)
+            val subDir = if (existing != null && existing.isDirectory) {
+                existing
+            } else {
+                existing?.delete()
+                parent?.createDirectory(subDirName)
+            }
             parent = subDir
         }
         return parent

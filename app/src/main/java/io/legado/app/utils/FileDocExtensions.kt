@@ -44,7 +44,7 @@ data class FileDoc(
 
     fun asDocumentFile(): DocumentFile? {
         if (isContentScheme) {
-            return if (isDir) {
+            return if (DocumentsContract.isTreeUri(uri)) {
                 treeDocumentFileConstructor.newInstance(null, appCtx, uri) as DocumentFile
             } else {
                 DocumentFile.fromSingleUri(appCtx, uri)
@@ -269,7 +269,8 @@ fun FileDoc.createFileIfNotExist(
 ): FileDoc {
     return if (uri.isContentScheme()) {
         val documentFile = asDocumentFile()!!
-        val tmp = DocumentUtils.createFileIfNotExist(documentFile, fileName, *subDirs)!!
+        val tmp = DocumentUtils.createFileIfNotExist(documentFile, fileName, *subDirs)
+            ?: throw NoStackTraceException("SAF 创建文件失败\nuri: $uri\nfileName: $fileName")
         FileDoc.fromDocumentFile(tmp)
     } else {
         val path = FileUtils.getPath(uri.path!!, *subDirs) + File.separator + fileName
@@ -283,7 +284,8 @@ fun FileDoc.createFolderIfNotExist(
 ): FileDoc {
     return if (uri.isContentScheme()) {
         val documentFile = asDocumentFile()!!
-        val tmp = DocumentUtils.createFolderIfNotExist(documentFile, *subDirs)!!
+        val tmp = DocumentUtils.createFolderIfNotExist(documentFile, *subDirs)
+            ?: throw NoStackTraceException("SAF 创建文件夹失败\nuri: $uri\nsubDirs: ${subDirs.joinToString()}")
         FileDoc.fromDocumentFile(tmp)
     } else {
         val path = FileUtils.getPath(uri.path!!, *subDirs)

@@ -63,7 +63,8 @@
     </io.legado.app.lib.prefs.PreferenceCategory>
 
     <io.legado.app.lib.prefs.PreferenceCategory
-        android:title="@string/backup_restore"
+        android:title="@string/local_sync"
+        app:allowDividerAbove="false"
         app:allowDividerBelow="false"
         app:iconSpaceReserved="false"
         app:layout="@layout/view_preference_category">
@@ -73,6 +74,35 @@
             android:summary="@string/select_backup_path"
             android:title="@string/backup_path"
             app:iconSpaceReserved="false" />
+
+        <io.legado.app.lib.prefs.SwitchPreference
+            android:defaultValue="true"
+            android:key="localAutoBackup"
+            android:summary="@string/local_auto_backup_s"
+            android:title="@string/local_auto_backup"
+            app:iconSpaceReserved="false" />
+
+        <io.legado.app.lib.prefs.SwitchPreference
+            android:defaultValue="true"
+            android:key="localAutoSyncProgress"
+            android:summary="@string/local_auto_sync_progress_s"
+            android:title="@string/local_auto_sync_progress"
+            app:iconSpaceReserved="false" />
+
+        <io.legado.app.lib.prefs.SwitchPreference
+            android:defaultValue="true"
+            android:key="onlyLatestBackup"
+            android:summary="@string/only_latest_backup_s"
+            android:title="@string/only_latest_backup_t"
+            app:iconSpaceReserved="false" />
+
+    </io.legado.app.lib.prefs.PreferenceCategory>
+
+    <io.legado.app.lib.prefs.PreferenceCategory
+        android:title="@string/backup_restore"
+        app:allowDividerBelow="false"
+        app:iconSpaceReserved="false"
+        app:layout="@layout/view_preference_category">
 
         <io.legado.app.lib.prefs.Preference
             android:key="web_dav_backup"
@@ -96,13 +126,6 @@
             android:key="import_old"
             android:summary="@string/import_old_summary"
             android:title="@string/menu_import_old_version"
-            app:iconSpaceReserved="false" />
-
-        <io.legado.app.lib.prefs.SwitchPreference
-            android:defaultValue="true"
-            android:key="onlyLatestBackup"
-            android:summary="@string/only_latest_backup_s"
-            android:title="@string/only_latest_backup_t"
             app:iconSpaceReserved="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference

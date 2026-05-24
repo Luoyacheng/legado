@@ -250,6 +250,25 @@ object Backup {
             } catch (e: Exception) {
                 AppLog.put("上传备份至webdav失败\n$e", e)
             }
+            if (AppConfig.localAutoBackup) {
+                val backupPath = AppConfig.backupPath
+                if (!backupPath.isNullOrBlank()) {
+                    val localBackupFileName = if (AppConfig.onlyLatestBackup) {
+                        "backup-${AppConfig.webDavDeviceName}.zip".normalizeFileName()
+                    } else {
+                        backupFileName
+                    }
+                    try {
+                        if (backupPath.isContentScheme()) {
+                            copyBackup(context, backupPath.toUri(), localBackupFileName)
+                        } else {
+                            copyBackup(File(backupPath), localBackupFileName)
+                        }
+                    } catch (e: Exception) {
+                        AppLog.put("复制备份到本地同步目录失败\n$e", e)
+                    }
+                }
+            }
         }
         FileUtils.delete(backupPath)
         FileUtils.delete(zipFilePath)

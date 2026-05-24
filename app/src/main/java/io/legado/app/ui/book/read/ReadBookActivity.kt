@@ -34,6 +34,7 @@ import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
 import io.legado.app.exception.NoStackTraceException
+import io.legado.app.help.AppLocalSync
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.IntentData
 import io.legado.app.help.TTS
@@ -454,7 +455,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
         lifecycleScope.launch {
             val show = ReadBook.inBookshelf && withContext(IO) {
-                AppWebDav.isOk
+                AppWebDav.isOk || AppLocalSync.isOk
             }
             menu.findItem(R.id.menu_get_progress)?.isVisible = show
             menu.findItem(R.id.menu_cover_progress)?.isVisible = show

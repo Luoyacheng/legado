@@ -24,6 +24,7 @@ import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
+import io.legado.app.help.AppLocalSync
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
@@ -133,6 +134,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             notifyAppCrash()
             //备份同步
             backupSync()
+            checkLocalNewBackup()
             //设置回调
             viewModel.setActivityCallback(this@MainActivity)
             //自动更新书源
@@ -322,6 +324,27 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                     cancelButton()
                     okButton {
                         viewModel.restoreWebDav(lastBackupFile.displayName)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun checkLocalNewBackup() {
+        if (!AppConfig.localAutoBackup) return
+        lifecycleScope.launch {
+            val deviceName = AppConfig.webDavDeviceName ?: return@launch
+            val info = withContext(IO) { AppLocalSync.getDeviceBackupInfo(deviceName) }
+                ?: return@launch
+            val (backupName, _, lastModified) = info
+            if (lastModified - LocalConfig.lastBackup > DateUtils.MINUTE_IN_MILLIS) {
+                LocalConfig.lastBackup = lastModified
+                alert(R.string.restore, R.string.local_restore_confirm) {
+                    cancelButton()
+                    okButton {
+                        lifecycleScope.launch {
+                            AppLocalSync.restoreFromLocalSync(backupName)
+                        }
                     }
                 }
             }

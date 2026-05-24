@@ -9,6 +9,7 @@ import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.ReadRecord
+import io.legado.app.help.AppLocalSync
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
@@ -237,8 +238,15 @@ object ReadBook : CoroutineScope by MainScope() {
     fun uploadProgress(toast: Boolean = false, successAction: (() -> Unit)? = null) {
         book?.let {
             launch(IO) {
-                AppWebDav.uploadBookProgress(it, toast) {
-                    successAction?.invoke()
+                if (AppLocalSync.isOk) {
+                    AppLocalSync.uploadBookProgress(it, toast) {
+                        successAction?.invoke()
+                    }
+                }
+                if (AppWebDav.isOk) {
+                    AppWebDav.uploadBookProgress(it, toast) {
+                        successAction?.invoke()
+                    }
                 }
                 ensureActive()
                 it.update()
@@ -258,27 +266,44 @@ object ReadBook : CoroutineScope by MainScope() {
         if (!AppConfig.syncBookProgress) return
         val book = book ?: return
         Coroutine.async {
-            AppWebDav.getBookProgress(book)
-        }.onError {
-            AppLog.put("拉取阅读进度失败", it)
-        }.onSuccess { progress ->
+            val localProgress = if (AppLocalSync.isOk) AppLocalSync.getBookProgress(book) else null
+            val webDavProgress = if (AppWebDav.isOk) AppWebDav.getBookProgress(book) else null
+
+            val progress = compareProgress(localProgress, webDavProgress)
+
             if (progress == null || progress.durChapterIndex < book.durChapterIndex ||
                 (progress.durChapterIndex == book.durChapterIndex
                         && progress.durChapterPos < book.durChapterPos)
             ) {
-                // 服务器没有进度或者进度比服务器快，上传现有进度
                 Coroutine.async {
-                    AppWebDav.uploadBookProgress(BookProgress(book), uploadSuccessAction)
+                    if (AppLocalSync.isOk) {
+                        AppLocalSync.uploadBookProgress(BookProgress(book), null)
+                    }
+                    if (AppWebDav.isOk) {
+                        AppWebDav.uploadBookProgress(BookProgress(book), uploadSuccessAction)
+                    }
                     book.update()
                 }
             } else if (progress.durChapterIndex > book.durChapterIndex ||
                 progress.durChapterPos > book.durChapterPos
             ) {
-                // 进度比服务器慢，执行传入动作
                 newProgressAction?.invoke(progress)
             } else {
                 syncSuccessAction?.invoke()
             }
+        }
+    }
+
+    private fun compareProgress(local: BookProgress?, webDav: BookProgress?): BookProgress? {
+        if (local == null && webDav == null) return null
+        if (local == null) return webDav
+        if (webDav == null) return local
+        return if (local.durChapterIndex > webDav.durChapterIndex ||
+            (local.durChapterIndex == webDav.durChapterIndex && local.durChapterPos > webDav.durChapterPos)
+        ) {
+            local
+        } else {
+            webDav
         }
     }
 

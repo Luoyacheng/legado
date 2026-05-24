@@ -1236,4 +1236,10 @@
     <string name="auto_check_new_backup_t">自动检查新备份</string>
     <string name="auto_check_new_backup_s">打开软件时检查是否有新备份，有新备份时提示是否更新</string>
     <string name="sys_image_picker">系统图片选择器</string>
+    <string name="local_sync">本地备份设置</string>
+    <string name="local_auto_backup">自动备份</string>
+    <string name="local_auto_backup_s">自动备份到本地备份路径</string>
+  <string name="local_auto_sync_progress">备份阅读进度</string>
+  <string name="local_auto_sync_progress_s">自动备份/恢复阅读进度</string>
+    <string name="local_restore_confirm">发现当前设备的新本地备份，是否恢复</string>
 </resources>

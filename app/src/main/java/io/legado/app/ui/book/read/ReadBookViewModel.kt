@@ -15,6 +15,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.exception.NoStackTraceException
+import io.legado.app.help.AppLocalSync
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
@@ -258,7 +259,10 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
     ) {
         if (!AppConfig.syncBookProgress) return
         execute {
-            AppWebDav.getBookProgress(book)
+            val localProgress = if (AppLocalSync.isOk) AppLocalSync.getBookProgress(book) else null
+            val webDavProgress = if (AppWebDav.isOk) AppWebDav.getBookProgress(book) else null
+            val progress = compareProgress(localProgress, webDavProgress)
+            progress
         }.onError {
             AppLog.put("拉取阅读进度失败《${book.name}》\n${it.localizedMessage}", it)
         }.onSuccess { progress ->
@@ -276,6 +280,19 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
                 AppLog.put("自动同步阅读进度成功《${book.name}》 ${progress.durChapterTitle}")
                 context.toastOnUi("已同步最新阅读进度")
             }
+        }
+    }
+
+    private fun compareProgress(local: BookProgress?, webDav: BookProgress?): BookProgress? {
+        if (local == null && webDav == null) return null
+        if (local == null) return webDav
+        if (webDav == null) return local
+        return if (local.durChapterIndex > webDav.durChapterIndex ||
+            (local.durChapterIndex == webDav.durChapterIndex && local.durChapterPos > webDav.durChapterPos)
+        ) {
+            local
+        } else {
+            webDav
         }
     }
 

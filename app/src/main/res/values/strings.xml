@@ -832,6 +832,15 @@
     <string name="sync_book_progress_plus_t">Sync Enhancement</string>
     <string name="sync_book_progress_plus_s">Sync cloud progress when re-entering the page (screen off, returning from background, etc.) or when the network becomes available. You will be prompted before syncing new progress.</string>
     <string name="sync_book_progress_success">Sync progress success</string>
+    <string name="local_sync_path">Local sync path</string>
+    <string name="local_sync_path_s">Set the local folder for sync progress, use with Syncthing or similar tools</string>
+    <string name="select_local_sync_path">Please select a local sync path</string>
+    <string name="local_sync">Local sync</string>
+    <string name="local_auto_backup">Auto backup</string>
+    <string name="local_auto_backup_s">Automatically backup and sync to the local directory, each device keeps its own latest backup</string>
+    <string name="local_auto_sync_progress">Auto sync reading progress</string>
+    <string name="local_auto_sync_progress_s">Automatically synchronize reading progress when entering/exiting the reading interface</string>
+    <string name="local_restore_confirm">A new local backup of the current device was found, whether to restore it or not</string>
     <string name="create_bookmark_error">Failed to create bookmark</string>
     <string name="single_url">Single URL</string>
     <string name="export_bookshelf">Export the list of books</string>
