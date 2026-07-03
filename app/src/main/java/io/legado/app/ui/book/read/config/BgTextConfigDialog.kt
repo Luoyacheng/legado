@@ -236,7 +236,7 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
                 if (i >= 0) {
                     ReadBookConfig.durConfig = defaultConfigs[i].copy()
                     initData()
-                    postEvent(EventBus.UP_CONFIG, arrayListOf(1, 2, 5))
+                    postEvent(EventBus.UP_CONFIG, arrayListOf(1, 2, 5, 13))
                 }
             }
         }

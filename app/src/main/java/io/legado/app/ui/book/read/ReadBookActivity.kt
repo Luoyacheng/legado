@@ -882,7 +882,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                 ReadBook.bookSource?.bookSourceUrl?.let {
                     scopes.add(it)
                 }
-                val text = selectedText.lineSequence().map { it.trim() }.joinToString("\n")
+                val text = selectedText.lineSequence().joinToString("\n") { it.trim() }
                 replaceActivity.launch(
                     ReplaceEditActivity.startIntent(
                         this,
@@ -1760,6 +1760,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                     10 -> ChapterProvider.upLayout()
                     11 -> readView.submitRenderTask()
                     12 -> readView.upPageTouchClick()
+                    13 -> upPageAnim()
                 }
             }
         }
