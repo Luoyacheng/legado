@@ -532,7 +532,7 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         get() = appCtx.getPrefString(PreferKey.clickImgWay)
 
     var preDownloadNum
-        get() = appCtx.getPrefInt(PreferKey.preDownloadNum, 10)
+        get() = appCtx.getPrefInt(PreferKey.preDownloadNum, 2)
         set(value) {
             appCtx.putPrefInt(PreferKey.preDownloadNum, value)
         }
