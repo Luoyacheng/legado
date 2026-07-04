@@ -307,7 +307,7 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var threadCount: Int
-        get() = appCtx.getPrefInt(PreferKey.threadCount, 16)
+        get() = appCtx.getPrefInt(PreferKey.threadCount, 32)
         set(value) {
             appCtx.putPrefInt(PreferKey.threadCount, value)
         }
