@@ -140,6 +140,7 @@ android {
     }
     packaging {
         resources.excludes.add('META-INF/*')
+        jniLibs.excludes.add('lib/*/librtmp-jni.so')
     }
 
     sourceSets {
