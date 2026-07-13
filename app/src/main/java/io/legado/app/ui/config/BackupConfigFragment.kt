@@ -24,7 +24,6 @@ import io.legado.app.help.config.LocalConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.storage.Backup
 import io.legado.app.help.storage.BackupConfig
-import io.legado.app.help.storage.ImportOldData
 import io.legado.app.help.storage.Restore
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
@@ -100,11 +99,11 @@ class BackupConfigFragment : PreferenceFragment(),
             }
         }
     }
-    private val restoreOld = registerForActivityResult(HandleFileContract()) {
-        it.uri?.let { uri ->
-            ImportOldData.importUri(appCtx, uri)
-        }
-    }
+//    private val restoreOld = registerForActivityResult(HandleFileContract()) {
+//        it.uri?.let { uri ->
+//            ImportOldData.importUri(appCtx, uri)
+//        }
+//    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.pref_config_backup)
@@ -235,7 +234,7 @@ class BackupConfigFragment : PreferenceFragment(),
             PreferKey.restoreIgnore -> backupIgnore()
             "web_dav_backup" -> backup()
             "web_dav_restore" -> restore()
-            "import_old" -> restoreOld.launch()
+//            "import_old" -> restoreOld.launch()
         }
         return super.onPreferenceTreeClick(preference)
     }

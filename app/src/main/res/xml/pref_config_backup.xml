@@ -92,12 +92,6 @@
             android:title="@string/restore_ignore"
             app:iconSpaceReserved="false" />
 
-        <io.legado.app.lib.prefs.Preference
-            android:key="import_old"
-            android:summary="@string/import_old_summary"
-            android:title="@string/menu_import_old_version"
-            app:iconSpaceReserved="false" />
-
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
             android:key="onlyLatestBackup"
