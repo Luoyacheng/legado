@@ -103,4 +103,7 @@ interface AlertBuilder<out D : DialogInterface> {
 
     fun noButton(handler: ((dialog: DialogInterface) -> Unit)? = null) =
         negativeButton(R.string.no, handler)
+
+    fun shibboleth(handler: ((dialog: DialogInterface) -> Unit)? = null) =
+        neutralButton(R.string.shibboleth, handler)
 }

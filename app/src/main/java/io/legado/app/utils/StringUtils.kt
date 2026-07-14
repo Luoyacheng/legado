@@ -3,6 +3,7 @@ package io.legado.app.utils
 import android.annotation.SuppressLint
 import android.text.TextUtils.isEmpty
 import android.util.Base64
+import io.legado.app.help.DirectLinkUpload
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -15,6 +16,7 @@ import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.math.abs
+import kotlin.random.Random
 
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
@@ -365,6 +367,117 @@ object StringUtils {
                 }
             }
         }
+    }
+
+
+    private val shibbolethMappings =  mapOf(
+        "https://" to listOf("#L:"),
+        "." to listOf("电", "店", "垫", "殿","。"),
+        "%" to listOf("白", "百", "拜", "摆", "💯"),
+        "/"  to listOf("杠", "刚", "钢", "岗", "🎹"),
+        "zip" to listOf("压", "亚", "呀", "牙", "🦆"),
+        "json"  to listOf("串", "穿", "船", "传", "🚢"),
+        "4" to listOf("四", "是", "时", "丝", "🕓"),
+        "5" to listOf("五", "武", "误", "勿", "🕔"),
+        "6" to listOf("六", "刘", "留", "陆", "🕕"),
+        "0" to listOf("零", "另", "玲", "灵", "⏰"),
+        "com" to listOf("🛜1", "🌐1", "🌏1"),
+        "cn" to listOf("🛜2", "🌐2", "🌏2"),
+        "net" to listOf("🛜3", "🌐3", "🌏3"),
+        "org" to listOf("🛜7", "🌐7", "🌏7"),
+        "xyz" to listOf("🛜8", "🌐8", "🌏8"),
+        "me" to listOf("🛜9", "🌐9", "🌏9"),
+    )
+
+    private val reverseMappings by lazy {
+        shibbolethMappings.flatMap { (original, replacements) ->
+            replacements.map { replacement -> replacement to original }
+        }.toMap()
+    }
+
+    const val BOOK_SOURCE = "sy"
+    const val RSS_SOURCE = "dy"
+    const val DICT_RULE = "zd"
+    const val REPLACE_RULE = "jh"
+    const val TOC_RULE = "ml"
+    const val TTS_RULE = "ld"
+
+
+    /**
+     * 链接转口令
+     */
+    fun toShibboleth(url:String, type:String, time: Long = System.currentTimeMillis()): String {
+        val random = Random(time)
+        val sortedKeys = shibbolethMappings.keys.sortedByDescending { it.length }
+        val result = StringBuilder()
+        var i = 0
+        while (i < url.length) {
+            var matchKey: String? = null
+            var matchLen = 0
+
+            // 找出所有匹配的 key，选最长的
+            for (key in sortedKeys) {
+                if (url.startsWith(key, i)) {
+                    if (key.length > matchLen) {
+                        matchKey = key
+                        matchLen = key.length
+                    }
+                }
+            }
+
+            if (matchKey != null) {
+                val replacements = shibbolethMappings[matchKey]!!
+                result.append(replacements[random.nextInt(replacements.size)])
+                i += matchLen
+            } else {
+                result.append(url[i])
+                i++
+            }
+        }
+
+        val expiryDate = DirectLinkUpload.getExpiryDate()
+        val expiresAt = if (expiryDate < 1) 0 else {
+            time + expiryDate.toLong() * 60 * 60 * 24 * 1000
+        }
+        return "复制口令到阅读导入$result！$type©${expiresAt.toString().take(7)}¥Sigma^"
+    }
+
+    /**
+     * 解口令
+     */
+    fun unShibboleth(txt:String): Triple<String, String, String> {
+        val p1 = txt.indexOf("#L:").takeIf { it > 0 } ?: 0
+        val p2 = txt.indexOf("！", p1)
+        val url = if (p2 > 0) {
+            txt.substring(p1, p2)
+        } else {
+            txt.substring(p1)
+        }
+        var customWord = ""
+        val type = if (p2 > 0) {
+            val p3 = txt.indexOf("©", p2)
+            if (p3 > 1) {
+                val p4 = txt.indexOf("¥", p3)
+                if (p4 > 1) {
+                    val expiresAt = txt.substring(p3 + 1, p4).toLong() * 1000 * 1000
+                    if (expiresAt > 1 && expiresAt < System.currentTimeMillis()) {
+                        //已过期
+                    }
+                    val p5 = txt.indexOf("^", p4)
+                    if (p5 > 1) {
+                        customWord = txt.substring(p4 + 1, p5)
+                    }
+                }
+            }
+            txt.substring(p2 + 1, p3)
+        } else {
+            ""
+        }
+        var result = url
+        reverseMappings.forEach { (replacement, original) ->
+            result = result.replace(replacement, original)
+        }
+        return Triple(result, type, customWord)
     }
 
 }

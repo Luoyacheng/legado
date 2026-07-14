@@ -99,12 +99,17 @@ object DirectLinkUpload {
         return getRule().summary
     }
 
+    fun getExpiryDate(): Int {
+        return getRule().expiryDate
+    }
+
     @Keep
     data class Rule(
         var uploadUrl: String, //创建分享链接
         var downloadUrlRule: String, //下载链接规则
         var summary: String, //注释
         var compress: Boolean = false, //是否压缩
+        var expiryDate: Int = 0, //有效期/天
     ) {
 
         override fun toString(): String {

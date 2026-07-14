@@ -28,6 +28,7 @@ import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.VerticalDivider
 import io.legado.app.utils.ACache
 import io.legado.app.utils.GSON
+import io.legado.app.utils.StringUtils
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.launch
 import io.legado.app.utils.sendToClip
@@ -62,16 +63,30 @@ class DictRuleActivity : VMBaseActivity<ActivityDictRuleBinding, DictRuleViewMod
     private val exportResult = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
             alert(R.string.export_success) {
-                if (uri.toString().isAbsUrl()) {
+                val url = uri.toString()
+                if (url.isAbsUrl()) {
                     setMessage(DirectLinkUpload.getSummary())
+                    val time = System.currentTimeMillis()
+                    shibboleth {
+                        val shibbolethUrl = StringUtils.toShibboleth(url, StringUtils.DICT_RULE, time)
+                        alert(R.string.shibboleth) {
+                            val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
+                                editView.setText(shibbolethUrl)
+                            }
+                            customView { alertBinding.root }
+                            okButton {
+                                sendToClip(shibbolethUrl)
+                            }
+                        }
+                    }
                 }
                 val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
                     editView.hint = getString(R.string.path)
-                    editView.setText(uri.toString())
+                    editView.setText(url)
                 }
                 customView { alertBinding.root }
                 okButton {
-                    sendToClip(uri.toString())
+                    sendToClip(url)
                 }
             }
         }
