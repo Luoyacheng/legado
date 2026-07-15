@@ -468,8 +468,11 @@ object StringUtils {
                         customWord = txt.substring(p4 + 1, p5)
                     }
                 }
+                txt.substring(p2 + 1, p3)
+            } else {
+                ""
             }
-            txt.substring(p2 + 1, p3)
+
         } else {
             ""
         }
