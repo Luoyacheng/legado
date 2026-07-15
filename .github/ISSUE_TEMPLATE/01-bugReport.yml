@@ -9,7 +9,7 @@ body:
       options:
         - label: 搜索现有issues，不存在相似或相关的issue / No similar or related issues
           required: true
-        - label: 最新[测试版](https://github.com/gedoor/legado/releases/beta)依然存在此问题 / Latest beta app does not work
+        - label: 最新[测试版](https://github.com/luoyacheng/legado-E/releases/beta)依然存在此问题 / Latest beta app does not work
           required: true
         - label: 此问题和Xposed、Lsposed、Magisk、手机主题、浏览器插件、无障碍服务等无关 / Make sure your machine is not touched by hook frameworks, plugins, accessibility etc
           required: true
@@ -18,8 +18,7 @@ body:
     attributes:
       label: 问题描述 / Describe Bugs
       description: |
-        非改版新增功能。请验证官方版也存在问题后去[官方区](https://github.com/gedoor/legado/issues)反馈，
-        本改版相关反馈前请确保已更新到最新版。
+        反馈前请确保已更新到最新版。
     validations:
       required: true
   - type: textarea

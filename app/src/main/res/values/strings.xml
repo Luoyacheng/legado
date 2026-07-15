@@ -1304,7 +1304,7 @@
     <string name="about_description_sigma">\u3000\u3000阅读Sigma继承自legado，旨在原版基础上完善和增加功能，欢迎您的加入。</string>
     <string name="contributors_summary_sigma">gedoor、Luoyacheng、Horis和 Xwite 等，详情请在 GitHub 中查看</string>
     <string name="app_share_description_sigma">
-        阅读 Sigma 下载地址：\nhttps://github.com/Luoyacheng/legado/releases
+        阅读 Sigma 下载地址：\nhttps://github.com/Luoyacheng/legado-E/releases
     </string>
     <string name="sure_cache_book">是否确认开始缓存？</string>
     <string name="non_printable_set">不可视字符设定</string>

@@ -81,7 +81,7 @@ getStringAwait(ruleStr, mContent)
 > 同步调用  
 
 支持直接调用java、source和cache对象上的函数。  
-java函数支持度同js教程[RssJsExtensions](https://github.com/Luoyacheng/legado/blob/main/app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt)。  
+java函数支持度同js教程[RssJsExtensions](https://github.com/Luoyacheng/legado-E/blob/main/app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt)。  
 额外注意，参数或返回结果任意一个不属于字符串、数字、布尔、空的函数无法支持，  
 再次打开浏览器startBrowser等相关函数不支持。
 ```js

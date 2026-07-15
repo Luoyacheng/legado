@@ -5,7 +5,7 @@
     "enabled": true,
     "singleUrl": true,
     "sourceGroup": "legado",
-    "sourceIcon": "https://cdn.jsdelivr.net/gh/gedoor/legado@master/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    "sourceIcon": "https://gitee.com/lyc486/yuedu/raw/master/yuque.png",
     "sourceName": "使用说明",
     "sourceUrl": "https://www.yuque.com/legado"
   },
