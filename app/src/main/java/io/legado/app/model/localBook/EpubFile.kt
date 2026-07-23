@@ -22,6 +22,7 @@ import me.ag2s.epublib.epub.EpubReader
 import me.ag2s.epublib.util.zip.AndroidZipFile
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.TextNode
 import org.jsoup.parser.Parser
 import org.jsoup.select.Elements
 import java.io.File
@@ -175,7 +176,28 @@ class EpubFile(var book: Book) {
         }
         val tag = Book.rubyTag
         if (book.getDelTag(tag)) {
-            elements.select("rp, rt").remove()
+              // merge ruby node with adjacent textNodes to avoid unwanted whitespace
+            element.select("ruby").forEach { ruby ->
+                ruby.select("rp, rt").remove()
+                val textNode = TextNode(ruby.text())
+                ruby.replaceWith(textNode)
+                val prev = textNode.previousSibling()
+                val next = textNode.nextSibling()
+                when {
+                    prev is TextNode -> {
+                        prev.text(prev.text() + textNode.text())
+                        textNode.remove()
+                        if (next is TextNode) {
+                            prev.text(prev.text() + next.text())
+                            next.remove()
+                        }
+                    }
+                    next is TextNode -> {
+                        textNode.text(textNode.text() + next.text())
+                        next.remove()
+                    }
+                }
+            }
         }
         val html = elements.outerHtml()
         return HtmlFormatter.formatKeepImg(html)
