@@ -21,6 +21,7 @@ import org.chromium.net.ExperimentalCronetEngine
 import org.chromium.net.UploadDataProvider
 import org.chromium.net.UrlRequest
 import org.chromium.net.X509Util
+import org.json.JSONArray
 import org.json.JSONObject
 import splitties.init.appCtx
 
@@ -69,6 +70,22 @@ val options by lazy {
 
     options.put("AsyncDNS", JSONObject("{'enable':true}"))
 
+    // ECH (Encrypted Client Hello) — 加密 TLS SNI，防止 SNI 审查/封锁
+    // 依赖 UseDnsHttpsSvcb (已启用) 查询 DNS HTTPS 记录获取 ECHConfig
+    if (AppConfig.isECH) {
+        // 启用 Chromium 的 EncryptedClientHello feature flag
+        options.put("enable_features", "EncryptedClientHello")
+
+        // 配置 DoH 解析器，确保能获取到 DNS HTTPS 记录 (含 ECH 配置)
+        // 系统 DNS 可能不支持 type 65 查询或被污染，DoH 可绕过
+        val doh = JSONObject()
+        doh.put("enable", true)
+        doh.put("servers", JSONArray().apply {
+            put("https://1.1.1.1/dns-query")
+            put("https://dns.google/dns-query")
+        })
+        options.put("DnsOverHttps", doh)
+    }
 
     options.toString()
 }
@@ -108,6 +125,8 @@ fun buildRequest(request: Request, callback: UrlRequest.Callback): UrlRequest? {
 }
 
 private fun customHost(url: String): String {
+    // ECH 启用时跳过域名→IP 替换，否则 SNI 会变成 IP，ECH 无法工作
+    if (AppConfig.isECH) return url
     val urlIp = customIp.remove(url)
     if (AppConfig.hostMap.isEmpty() && urlIp == null) return url
     val host = AppPattern.domainRegex.find(url)?.groupValues?.getOrNull(1) ?: return url
