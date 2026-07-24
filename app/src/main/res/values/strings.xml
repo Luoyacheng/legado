@@ -896,7 +896,7 @@
     <string name="check_source_show_debug_message_summary">Show network status and timestamp during source checking</string>
     <string name="need_login">need login</string>
     <string name="pref_cronet_summary">use Cronet access network</string>
-    <string name="pref_ech_summary">Encrypted Client Hello, encrypt SNI to bypass censorship (requires Cronet)</string>
+    <string name="pref_ech_summary">Encrypted Client Hello, encrypt SNI to bypass censorship via local proxy (needs restart on toggle)</string>
     <string name="pref_ech_doh_title">ECH DoH Server</string>
     <string name="pref_ech_doh_summary">DoH server for ECH DNS queries</string>
     <string name="anti_alias">Anti-Aliasing</string>

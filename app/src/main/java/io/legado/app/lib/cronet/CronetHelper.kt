@@ -21,7 +21,6 @@ import org.chromium.net.ExperimentalCronetEngine
 import org.chromium.net.UploadDataProvider
 import org.chromium.net.UrlRequest
 import org.chromium.net.X509Util
-import org.json.JSONArray
 import org.json.JSONObject
 import splitties.init.appCtx
 
@@ -70,25 +69,9 @@ val options by lazy {
 
     options.put("AsyncDNS", JSONObject("{'enable':true}"))
 
-    // ECH (Encrypted Client Hello) — 加密 TLS SNI，防止 SNI 审查/封锁
-    //
-    // 重要：ECH 在 Cronet 128 中已默认启用 (SSLContextConfig.ech_enabled = true)
-    // 不需要通过 enable_features 开启 (该选项不被 Cronet 实验选项解析器支持)
-    //
-    // ECH 生效需要两个条件：
-    // 1. DoH 解析器能返回 DNS HTTPS 记录 (type 65，含 ECHConfig)
-    // 2. 目标网站在 DNS 中发布了 ECHConfig (如 Cloudflare 等支持的站点)
-    //
-    // 这里配置 DoH 确保能获取到 DNS HTTPS 记录
-    // 系统 DNS 可能不支持 type 65 查询或被污染，DoH 可绕过
-    if (AppConfig.isECH) {
-        val doh = JSONObject()
-        doh.put("enable", true)
-        doh.put("servers", JSONArray().apply {
-            put(AppConfig.echDohUrl)
-        })
-        options.put("DnsOverHttps", doh)
-    }
+    // ECH 现在通过本地 Go 代理实现 (EchProxyManager)
+    // ECH 开启时不使用 Cronet (CronetInterceptor 会跳过)
+    // 所以这里不再配置 Cronet 的 DoH/ECH
 
     options.toString()
 }

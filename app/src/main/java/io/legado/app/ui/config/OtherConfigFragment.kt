@@ -223,6 +223,10 @@ class OtherConfigFragment : PreferenceFragment(),
                 upPreferenceSummary(PreferKey.echDohUrl, AppConfig.echDohUrl)
             }
 
+            PreferKey.ech -> listView.postDelayed(1000) {
+                appCtx.restart()
+            }
+
             PreferKey.checkSource -> listView.post {
                 upPreferenceSummary(PreferKey.checkSource, CheckSource.summary)
             }
