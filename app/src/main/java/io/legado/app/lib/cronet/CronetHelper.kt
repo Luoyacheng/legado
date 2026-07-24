@@ -78,11 +78,11 @@ val options by lazy {
 
         // 配置 DoH 解析器，确保能获取到 DNS HTTPS 记录 (含 ECH 配置)
         // 系统 DNS 可能不支持 type 65 查询或被污染，DoH 可绕过
+        // 使用用户配置的 DoH 地址（默认 1.1.1.1，国内可能需要换）
         val doh = JSONObject()
         doh.put("enable", true)
         doh.put("servers", JSONArray().apply {
-            put("https://1.1.1.1/dns-query")
-            put("https://dns.google/dns-query")
+            put(AppConfig.echDohUrl)
         })
         options.put("DnsOverHttps", doh)
     }
