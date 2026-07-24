@@ -255,6 +255,8 @@ jobs:
     needs: [ prepare, build ]
     if: github.event_name != 'pull_request' && (github.repository == 'Luoyacheng/legado-E' || github.repository == 'anglesgirl/legado-E')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
