@@ -74,8 +74,8 @@ object EchProxyManager {
             // 读取进程输出（防止管道阻塞）
             Thread({
                 process?.inputStream?.bufferedReader()?.use { reader ->
-                    var line: String?
-                    while (runCatching { reader.readLine() }.also { line = it } != null) {
+                    while (true) {
+                        val line = runCatching { reader.readLine() }.getOrNull() ?: break
                         DebugLog.d(TAG, "proxy: $line")
                     }
                 }
