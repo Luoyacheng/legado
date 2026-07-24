@@ -177,20 +177,21 @@ class EpubFile(var book: Book) {
         val tag = Book.rubyTag
         if (book.getDelTag(tag)) {
               // merge ruby node with adjacent textNodes to avoid unwanted whitespace
-            element.select("ruby").forEach { ruby ->
+            elements.select("ruby").forEach { ruby ->
                 ruby.select("rp, rt").remove()
                 val textNode = TextNode(ruby.text())
                 ruby.replaceWith(textNode)
                 val prev = textNode.previousSibling()
                 val next = textNode.nextSibling()
                 when {
+                    prev is TextNode && next is TextNode -> {
+                        prev.text(prev.text() + textNode.text() + next.text())
+                        textNode.remove()
+                        next.remove()
+                    }
                     prev is TextNode -> {
                         prev.text(prev.text() + textNode.text())
                         textNode.remove()
-                        if (next is TextNode) {
-                            prev.text(prev.text() + next.text())
-                            next.remove()
-                        }
                     }
                     next is TextNode -> {
                         textNode.text(textNode.text() + next.text())
