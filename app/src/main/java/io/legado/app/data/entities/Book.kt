@@ -340,7 +340,7 @@ data class Book(
     }
 
     fun addDelTag(tag: Long) {
-        config.delTag = config.delTag and tag
+        config.delTag = config.delTag or tag
     }
 
     fun removeDelTag(tag: Long) {
