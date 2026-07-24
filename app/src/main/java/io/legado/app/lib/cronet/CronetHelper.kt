@@ -71,14 +71,17 @@ val options by lazy {
     options.put("AsyncDNS", JSONObject("{'enable':true}"))
 
     // ECH (Encrypted Client Hello) — 加密 TLS SNI，防止 SNI 审查/封锁
-    // 依赖 UseDnsHttpsSvcb (已启用) 查询 DNS HTTPS 记录获取 ECHConfig
+    //
+    // 重要：ECH 在 Cronet 128 中已默认启用 (SSLContextConfig.ech_enabled = true)
+    // 不需要通过 enable_features 开启 (该选项不被 Cronet 实验选项解析器支持)
+    //
+    // ECH 生效需要两个条件：
+    // 1. DoH 解析器能返回 DNS HTTPS 记录 (type 65，含 ECHConfig)
+    // 2. 目标网站在 DNS 中发布了 ECHConfig (如 Cloudflare 等支持的站点)
+    //
+    // 这里配置 DoH 确保能获取到 DNS HTTPS 记录
+    // 系统 DNS 可能不支持 type 65 查询或被污染，DoH 可绕过
     if (AppConfig.isECH) {
-        // 启用 Chromium 的 EncryptedClientHello feature flag
-        options.put("enable_features", "EncryptedClientHello")
-
-        // 配置 DoH 解析器，确保能获取到 DNS HTTPS 记录 (含 ECH 配置)
-        // 系统 DNS 可能不支持 type 65 查询或被污染，DoH 可绕过
-        // 使用用户配置的 DoH 地址（默认 1.1.1.1，国内可能需要换）
         val doh = JSONObject()
         doh.put("enable", true)
         doh.put("servers", JSONArray().apply {
